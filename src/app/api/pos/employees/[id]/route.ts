@@ -5,17 +5,18 @@ import { auth } from '@clerk/nextjs/server'
 // Get single employee
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
+    const { id } = await params
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const employee = await db.employee.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!employee) {
@@ -41,10 +42,11 @@ export async function GET(
 // Update employee
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
+    const { id } = await params
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -63,7 +65,7 @@ export async function PUT(
     }
 
     const targetEmployee = await db.employee.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!targetEmployee) {
@@ -84,7 +86,7 @@ export async function PUT(
     }
 
     const employee = await db.employee.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         phone,
@@ -107,10 +109,11 @@ export async function PUT(
 // Delete employee
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
+    const { id } = await params
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -126,7 +129,7 @@ export async function DELETE(
     }
 
     await db.employee.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ success: true })

@@ -4,11 +4,12 @@ import { db } from '@/lib/db'
 // Get sale for receipt
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const sale = await db.sale.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: {
           include: {

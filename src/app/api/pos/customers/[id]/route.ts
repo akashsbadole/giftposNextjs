@@ -4,11 +4,12 @@ import { db } from '@/lib/db'
 // Get single customer
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const customer = await db.customer.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         sales: {
           orderBy: { createdAt: 'desc' },
@@ -31,14 +32,15 @@ export async function GET(
 // Update customer
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { name, email, phone, address } = body
 
     const customer = await db.customer.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         email,
@@ -60,11 +62,12 @@ export async function PUT(
 // Delete customer
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await db.customer.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ success: true })

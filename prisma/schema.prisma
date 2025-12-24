@@ -84,7 +84,7 @@ model Employee {
   id        String   @id @default(cuid())
   clerkId   String?  @unique  // Clerk user ID for authentication
   name      String
-  email     String   @unique
+  email     String?  @unique  // Optional - not always available from Clerk
   phone     String?
   role      String   @default("staff") // admin, manager, staff
   isActive  Boolean  @default(true)

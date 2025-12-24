@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
+import { isUserAllowed, getAccessDenialReason } from '@/lib/access-control'
 
 // Sync current user or get employee info
 export async function GET() {
@@ -11,6 +12,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if user is in allowed list
+    const email = sessionClaims?.email as string
+    const isAllowed = isUserAllowed(userId, email)
+    if (!isAllowed) {
+      // Return 401 Unauthorized to trigger redirect to login page
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     // Check if employee exists for this clerk user
     let employee = await db.employee.findFirst({
       where: { clerkId: userId },
@@ -19,7 +31,7 @@ export async function GET() {
     // If employee doesn't exist, try to create one
     if (!employee) {
       const email = sessionClaims?.email as string
-      const name = sessionClaims?.name || email?.split('@')[0] || 'User'
+      const name = (sessionClaims?.name as string) || email?.split('@')[0] || 'User'
 
       // Get or create store
       let store = await db.store.findFirst()

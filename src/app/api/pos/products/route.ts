@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       isActive,
     } = body
 
-    if (!name || !sku || !price || !categoryId) {
+    if (!name || !sku || price === undefined || price === null || !categoryId) {
       return NextResponse.json(
         { error: 'Name, SKU, price, and category are required' },
         { status: 400 }
@@ -52,6 +52,18 @@ export async function POST(request: NextRequest) {
           currency: 'USD',
         },
       })
+    }
+
+    // Validate category exists
+    const category = await db.category.findUnique({
+      where: { id: categoryId }
+    })
+    
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 400 }
+      )
     }
 
     const product = await db.product.create({
@@ -79,6 +91,18 @@ export async function POST(request: NextRequest) {
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'SKU or barcode already exists' },
+        { status: 400 }
+      )
+    }
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid category or store reference' },
+        { status: 400 }
+      )
+    }
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Referenced record not found' },
         { status: 400 }
       )
     }

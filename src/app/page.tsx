@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { useAuth, UserButton } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ShoppingCart, Package, Users, BarChart3, Settings, Store, LogOut, Shield } from 'lucide-react'
+import { ShoppingCart, Package, Users, BarChart3, Settings, Store, LogOut, Shield, Users2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import POSInterface from '@/components/pos/POSInterface'
 import ProductsManagement from '@/components/pos/ProductsManagement'
 import CustomersManagement from '@/components/pos/CustomersManagement'
+import EmployeesManagement from '@/components/pos/EmployeesManagement'
 import SalesReport from '@/components/pos/SalesReport'
 import SettingsPanel from '@/components/pos/SettingsPanel'
 
@@ -41,7 +42,15 @@ export default function Home() {
         setEmployee(empData)
       } else {
         const error = await response.json()
-        if (response.status === 400 && error.error === 'Maximum number of employees reached') {
+        if (response.status === 401) {
+          // Unauthorized - redirect to sign-in page for security
+          router.push('/sign-in')
+          return
+        } else if (response.status === 403) {
+          // Access denied - redirect to sign-in page for security
+          router.push('/sign-in')
+          return
+        } else if (response.status === 400 && error.error === 'Maximum number of employees reached') {
           toast({
             title: 'Access Denied',
             description: 'Maximum number of employees (3) has been reached. Contact admin.',
@@ -147,6 +156,12 @@ export default function Home() {
               <Users className="w-4 h-4 flex-shrink-0" />
               <span>Customers</span>
             </TabsTrigger>
+            {(employee?.role === 'admin' || employee?.role === 'manager') && (
+              <TabsTrigger value="employees" className="min-w-[80px] gap-2">
+                <Users2 className="w-4 h-4 flex-shrink-0" />
+                <span>Employees</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="reports" className="min-w-[80px] gap-2">
               <BarChart3 className="w-4 h-4 flex-shrink-0" />
               <span>Reports</span>
@@ -168,6 +183,12 @@ export default function Home() {
           <TabsContent value="customers" className="mt-0">
             <CustomersManagement />
           </TabsContent>
+
+          {(employee?.role === 'admin' || employee?.role === 'manager') && (
+            <TabsContent value="employees" className="mt-0">
+              <EmployeesManagement />
+            </TabsContent>
+          )}
 
           <TabsContent value="reports" className="mt-0">
             <SalesReport />

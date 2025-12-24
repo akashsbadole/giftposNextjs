@@ -15,8 +15,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useToast } from '@/hooks/use-toast'
-import { Search, Plus, Edit, Trash2, User, Mail, Phone } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, User, Mail, Phone, ChevronDown, ChevronUp, Receipt, Calendar } from 'lucide-react'
 
 interface Customer {
   id: string
@@ -25,6 +27,19 @@ interface Customer {
   phone?: string
   address?: string
   points: number
+}
+
+interface PurchaseHistory {
+  id: string
+  invoiceNumber: string
+  total: number
+  createdAt: string
+  items: {
+    quantity: number
+    product: {
+      name: string
+    }
+  }[]
 }
 
 export default function CustomersManagement() {
@@ -40,6 +55,9 @@ export default function CustomersManagement() {
     phone: '',
     address: '',
   })
+  const [purchaseHistory, setPurchaseHistory] = useState<Map<string, PurchaseHistory[]>>(new Map())
+  const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set())
+  const [loadingHistory, setLoadingHistory] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadCustomers()
@@ -57,6 +75,48 @@ export default function CustomersManagement() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadPurchaseHistory = async (customerId: string) => {
+    if (loadingHistory.has(customerId)) return
+    
+    setLoadingHistory(prev => new Set([...prev, customerId]))
+    
+    try {
+      const response = await fetch(`/api/pos/customers/${customerId}/purchases`)
+      if (response.ok) {
+        const data = await response.json()
+        setPurchaseHistory(prev => {
+          const updated = new Map(prev)
+          updated.set(customerId, data)
+          return updated
+        })
+      }
+    } catch (error) {
+      console.error('Error loading purchase history:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load purchase history',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoadingHistory(prev => {
+        const updated = new Set(prev)
+        updated.delete(customerId)
+        return updated
+      })
+    }
+  }
+
+  const toggleCustomerExpansion = (customerId: string) => {
+    const newExpanded = new Set(expandedCustomers)
+    if (newExpanded.has(customerId)) {
+      newExpanded.delete(customerId)
+    } else {
+      newExpanded.add(customerId)
+      loadPurchaseHistory(customerId)
+    }
+    setExpandedCustomers(newExpanded)
   }
 
   const filteredCustomers = customers.filter(
@@ -189,58 +249,129 @@ export default function CustomersManagement() {
                   <p>No customers found</p>
                 </div>
               ) : (
-                filteredCustomers.map((customer) => (
-                  <Card key={customer.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{customer.name}</h3>
-                            {customer.points > 0 && (
-                              <Badge variant="secondary" className="text-xs">
-                                {customer.points} pts
-                              </Badge>
-                            )}
+                filteredCustomers.map((customer) => {
+                  const isExpanded = expandedCustomers.has(customer.id)
+                  const isLoadingHistory = loadingHistory.has(customer.id)
+                  const customerHistory = purchaseHistory.get(customer.id) || []
+                  
+                  return (
+                    <Card key={customer.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold">{customer.name}</h3>
+                              {customer.points > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {customer.points} pts
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                              {customer.email && (
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-3 h-3" />
+                                  <span>{customer.email}</span>
+                                </div>
+                              )}
+                              {customer.phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-3 h-3" />
+                                  <span>{customer.phone}</span>
+                                </div>
+                              )}
+                              {customer.address && (
+                                <p className="text-xs truncate">{customer.address}</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="space-y-1 text-sm text-muted-foreground">
-                            {customer.email && (
-                              <div className="flex items-center gap-2">
-                                <Mail className="w-3 h-3" />
-                                <span>{customer.email}</span>
-                              </div>
-                            )}
-                            {customer.phone && (
-                              <div className="flex items-center gap-2">
-                                <Phone className="w-3 h-3" />
-                                <span>{customer.phone}</span>
-                              </div>
-                            )}
-                            {customer.address && (
-                              <p className="text-xs truncate">{customer.address}</p>
-                            )}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleCustomerExpansion(customer.id)}
+                              disabled={isLoadingHistory}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(customer)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(customer.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(customer)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(customer.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                        
+                        {/* Purchase History Section */}
+                        {isExpanded && (
+                          <Collapsible open={isExpanded}>
+                            <CollapsibleContent>
+                              <Separator className="my-4" />
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Receipt className="w-4 h-4" />
+                                  <h4 className="font-medium">Purchase History</h4>
+                                  <Badge variant="outline" className="text-xs">
+                                    {customerHistory.length} {customerHistory.length === 1 ? 'purchase' : 'purchases'}
+                                  </Badge>
+                                </div>
+                                
+                                {isLoadingHistory ? (
+                                  <div className="flex items-center justify-center py-4">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                                  </div>
+                                ) : customerHistory.length === 0 ? (
+                                  <div className="text-center py-4 text-muted-foreground">
+                                    <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No purchase history</p>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {customerHistory.map((purchase) => (
+                                      <div key={purchase.id} className="flex items-center justify-between p-2 rounded border bg-muted/30">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant="outline" className="text-xs">
+                                              #{purchase.invoiceNumber}
+                                            </Badge>
+                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                              <Calendar className="w-3 h-3" />
+                                              {new Date(purchase.createdAt).toLocaleDateString()}
+                                            </div>
+                                          </div>
+                                          <p className="text-xs text-muted-foreground">
+                                            {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'items'}
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="font-semibold text-sm">${purchase.total.toFixed(2)}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })
               )}
             </div>
           </ScrollArea>

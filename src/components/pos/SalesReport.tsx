@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -13,6 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import {
   DollarSign,
@@ -23,6 +32,8 @@ import {
   Package,
   ArrowUp,
   ArrowDown,
+  Calendar,
+  Filter,
 } from 'lucide-react'
 
 interface Sale {
@@ -36,6 +47,7 @@ interface Sale {
   status: string
   createdAt: string
   customer?: {
+    id: string
     name: string
   }
   employee?: {
@@ -66,10 +78,20 @@ export default function SalesReport() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+  const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('month')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [filteredSales, setFilteredSales] = useState<Sale[]>([])
+  const [filteredStats, setFilteredStats] = useState<Stats | null>(null)
+  const [previousPeriodStats, setPreviousPeriodStats] = useState<Stats | null>(null)
 
   useEffect(() => {
     loadSalesData()
   }, [])
+
+  useEffect(() => {
+    filterSalesData()
+  }, [sales, dateFilter, customStartDate, customEndDate])
 
   const loadSalesData = async () => {
     try {
@@ -92,6 +114,161 @@ export default function SalesReport() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getDateRange = (filter: string) => {
+    const now = new Date()
+    const start = new Date()
+    const previousStart = new Date()
+    const previousEnd = new Date()
+
+    switch (filter) {
+      case 'today':
+        start.setHours(0, 0, 0, 0)
+        previousStart.setDate(now.getDate() - 1)
+        previousStart.setHours(0, 0, 0, 0)
+        previousEnd.setDate(now.getDate() - 1)
+        previousEnd.setHours(23, 59, 59, 999)
+        break
+      case 'week':
+        start.setDate(now.getDate() - 7)
+        previousStart.setDate(now.getDate() - 14)
+        previousEnd.setDate(now.getDate() - 8)
+        break
+      case 'month':
+        start.setMonth(now.getMonth() - 1)
+        previousStart.setMonth(now.getMonth() - 2)
+        previousEnd.setMonth(now.getMonth() - 1)
+        previousEnd.setDate(0) // Last day of previous month
+        break
+      case 'quarter':
+        start.setMonth(now.getMonth() - 3)
+        previousStart.setMonth(now.getMonth() - 6)
+        previousEnd.setMonth(now.getMonth() - 3)
+        previousEnd.setDate(0)
+        break
+      case 'year':
+        start.setFullYear(now.getFullYear() - 1)
+        previousStart.setFullYear(now.getFullYear() - 2)
+        previousEnd.setFullYear(now.getFullYear() - 1)
+        previousEnd.setMonth(11, 31)
+        break
+      case 'custom':
+        if (!customStartDate || !customEndDate) {
+          return { currentStart: null, currentEnd: null, previousStart: null, previousEnd: null }
+        }
+        return {
+          currentStart: new Date(customStartDate),
+          currentEnd: new Date(customEndDate),
+          previousStart: null,
+          previousEnd: null,
+        }
+      default:
+        return { currentStart: null, currentEnd: null, previousStart: null, previousEnd: null }
+    }
+
+    if (filter === 'custom') {
+      if (!customStartDate || !customEndDate) {
+        return { currentStart: null, currentEnd: null, previousStart: null, previousEnd: null }
+      }
+      return {
+        currentStart: new Date(customStartDate),
+        currentEnd: new Date(customEndDate),
+        previousStart: null,
+        previousEnd: null,
+      }
+    }
+
+    return {
+      currentStart: start,
+      currentEnd: now,
+      previousStart,
+      previousEnd,
+    }
+  }
+
+  const filterSalesData = () => {
+    if (sales.length === 0) return
+
+    const { currentStart, currentEnd, previousStart, previousEnd } = getDateRange(dateFilter)
+
+    // Filter current period sales
+    const currentSales = sales.filter(sale => {
+      if (!currentStart || !currentEnd) return false
+      const saleDate = new Date(sale.createdAt)
+      return saleDate >= currentStart && saleDate <= currentEnd
+    })
+
+    // Filter previous period sales for comparison (skip for custom dates)
+    const previousSales = dateFilter !== 'custom' && previousStart && previousEnd
+      ? sales.filter(sale => {
+          const saleDate = new Date(sale.createdAt)
+          return saleDate >= previousStart && saleDate <= previousEnd
+        })
+      : []
+
+    setFilteredSales(currentSales)
+
+    // Calculate filtered stats
+    const filteredStats = calculateStats(currentSales)
+    const previousStats = calculateStats(previousSales)
+    
+    setFilteredStats(filteredStats)
+    setPreviousPeriodStats(previousStats)
+  }
+
+  const calculateStats = (salesData: Sale[]): Stats => {
+    const totalSales = salesData.length
+    const totalRevenue = salesData.reduce((sum, sale) => sum + sale.total, 0)
+    const totalCustomers = new Set(salesData.map(sale => sale.customer?.id).filter(Boolean)).size
+    const totalTransactions = totalSales
+    
+    // Calculate top products
+    const productSales: { [key: string]: { quantity: number; revenue: number; name: string } } = {}
+    salesData.forEach(sale => {
+      sale.items.forEach(item => {
+        const key = item.product.name
+        if (!productSales[key]) {
+          productSales[key] = { quantity: 0, revenue: 0, name: key }
+        }
+        productSales[key].quantity += item.quantity
+        productSales[key].revenue += item.subtotal
+      })
+    })
+    
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10)
+
+    // Calculate payment method breakdown
+    const paymentMethods: { [key: string]: { count: number; total: number } } = {}
+    salesData.forEach(sale => {
+      const method = sale.paymentMethod
+      if (!paymentMethods[method]) {
+        paymentMethods[method] = { count: 0, total: 0 }
+      }
+      paymentMethods[method].count++
+      paymentMethods[method].total += sale.total
+    })
+
+    const salesByPayment = Object.entries(paymentMethods).map(([method, data]) => ({
+      method,
+      ...data,
+    }))
+
+    return {
+      totalSales,
+      totalRevenue,
+      totalTransactions: totalSales,
+      totalCustomers,
+      topProducts,
+      salesByPayment,
+    }
+  }
+
+  const calculateTrend = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
   }
 
   if (loading) {
@@ -149,33 +326,91 @@ export default function SalesReport() {
 
   return (
     <div className="space-y-6">
+      {/* Date Filter Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Time Filter
+          </CardTitle>
+          <CardDescription>Filter sales data by time period</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
+              <SelectTrigger className="w-[200px]">
+                <Calendar className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">Last 7 days</SelectItem>
+                <SelectItem value="month">Last 30 days</SelectItem>
+                <SelectItem value="quarter">Last 3 months</SelectItem>
+                <SelectItem value="year">Last year</SelectItem>
+                <SelectItem value="custom">Custom range</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {dateFilter === 'custom' && (
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  placeholder="Start date"
+                />
+                <Input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  placeholder="End date"
+                />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Overview */}
-      {stats && (
+      {filteredStats && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Revenue"
-            value={stats.totalRevenue}
+            value={filteredStats.totalRevenue}
             icon={DollarSign}
             prefix="$"
-            trend={12.5}
+            trend={calculateTrend(
+              filteredStats.totalRevenue,
+              previousPeriodStats?.totalRevenue || 0
+            )}
           />
           <StatCard
             title="Total Sales"
-            value={stats.totalSales}
+            value={filteredStats.totalSales}
             icon={ShoppingCart}
-            trend={8.2}
+            trend={calculateTrend(
+              filteredStats.totalSales,
+              previousPeriodStats?.totalSales || 0
+            )}
           />
           <StatCard
             title="Transactions"
-            value={stats.totalTransactions}
+            value={filteredStats.totalTransactions}
             icon={Receipt}
-            trend={5.1}
+            trend={calculateTrend(
+              filteredStats.totalTransactions,
+              previousPeriodStats?.totalTransactions || 0
+            )}
           />
           <StatCard
             title="Customers"
-            value={stats.totalCustomers}
+            value={filteredStats.totalCustomers}
             icon={Users}
-            trend={3.7}
+            trend={calculateTrend(
+              filteredStats.totalCustomers,
+              previousPeriodStats?.totalCustomers || 0
+            )}
           />
         </div>
       )}
@@ -191,18 +426,24 @@ export default function SalesReport() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Sales</CardTitle>
-              <CardDescription>View and manage your sales transactions</CardDescription>
+              <CardDescription>
+                View and manage your sales transactions
+                {filteredSales.length > 0 && (
+                  <span className="ml-2">({filteredSales.length} sales in selected period)</span>
+                )}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[calc(100vh-400px)]">
-                {sales.length === 0 ? (
+                {filteredSales.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No sales recorded yet</p>
+                    <p>No sales recorded in this period</p>
+                    <p className="text-sm mt-1">Try selecting a different time range</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {sales.map((sale) => (
+                    {filteredSales.map((sale) => (
                       <Card
                         key={sale.id}
                         className="hover:shadow-md transition-shadow cursor-pointer"
