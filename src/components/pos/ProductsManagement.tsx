@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,9 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Search, Plus, Edit, Trash2, Package, AlertCircle } from 'lucide-react'
+import { useSettings } from '@/lib/settings-context'
+import { useBarcodeScanner, type ScanResult } from '@/hooks/use-barcode-scanner'
+import { Search, Plus, Edit, Trash2, Package, AlertCircle, Store, Camera, CameraOff, Scan, Zap, Download, Upload, CheckCircle, XCircle } from 'lucide-react'
 
 interface Product {
   id: string
@@ -51,12 +53,19 @@ interface Category {
 
 export default function ProductsManagement() {
   const { toast } = useToast()
+  const { store, formatCurrency } = useSettings()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [barcodeDialogOpen, setBarcodeDialogOpen] = useState(false)
+  const [barcodeValidation, setBarcodeValidation] = useState<{isValid: boolean, format?: string, error?: string} | null>(null)
+  
+  // Barcode scanning state
+  const [lastScan, setLastScan] = useState<ScanResult | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -76,6 +85,13 @@ export default function ProductsManagement() {
 
   const loadData = async () => {
     try {
+      // First, sync the user to create employee record
+      const syncRes = await fetch('/api/auth/sync-user')
+      if (!syncRes.ok) {
+        console.error('Failed to sync user:', await syncRes.text())
+        return
+      }
+
       const [productsRes, categoriesRes] = await Promise.all([
         fetch('/api/pos/products'),
         fetch('/api/pos/categories'),
@@ -104,6 +120,72 @@ export default function ProductsManagement() {
       product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Validate barcode format
+  const validateBarcode = useCallback((barcode: string) => {
+    if (!barcode.trim()) {
+      setBarcodeValidation(null)
+      return
+    }
+    
+    const formats = {
+      ean13: /^\d{13}$/,
+      ean8: /^\d{8}$/,
+      upcA: /^\d{12}$/,
+      upcE: /^\d{8}$/,
+      code128: /^[\x00-\x7F]+$/,
+      code39: /^[0-9A-Z\-\.\$\/\+\%\*\s]+$/,
+      itf14: /^\d{14}$/,
+      codabar: /^[0-9\-\$\:\.\/\+ABCD]+$/,
+    }
+    
+    for (const [formatName, pattern] of Object.entries(formats)) {
+      if (pattern.test(barcode.trim())) {
+        setBarcodeValidation({ isValid: true, format: formatName.toUpperCase() })
+        return
+      }
+    }
+    
+    setBarcodeValidation({ isValid: false, error: 'Invalid barcode format' })
+  }, [])
+
+  const handleBarcodeScan = useCallback(async (result: ScanResult) => {
+    setLastScan(result)
+    setFormData(prev => ({ ...prev, barcode: result.code }))
+    
+    // Check if barcode already exists
+    try {
+      const response = await fetch(`/api/pos/barcode?barcode=${encodeURIComponent(result.code)}`)
+      if (response.ok) {
+        const existingProduct = await response.json()
+        if (!editingProduct || existingProduct.id !== editingProduct.id) {
+          toast({
+            title: 'Barcode Already Exists',
+            description: `This barcode is already used by: ${existingProduct.name}`,
+            variant: 'destructive',
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Barcode validation error:', error)
+    }
+  }, [editingProduct, toast])
+
+  const {
+    isScanning,
+    isCameraActive,
+    error: scannerError,
+    startScan,
+    stopScan,
+    toggleCamera,
+    manualInput
+  } = useBarcodeScanner(handleBarcodeScan, {
+    debounceMs: 100,
+    autoDetection: true,
+    cameraEnabled: true,
+    soundFeedback: true,
+    visualFeedback: false
+  })
+
   const handleAdd = () => {
     setEditingProduct(null)
     setFormData({
@@ -118,7 +200,10 @@ export default function ProductsManagement() {
       categoryId: '',
       isActive: true,
     })
+    setBarcodeValidation(null)
+    setLastScan(null)
     setDialogOpen(true)
+    startScan()
   }
 
   const handleEdit = (product: Product) => {
@@ -135,7 +220,10 @@ export default function ProductsManagement() {
       categoryId: product.categoryId,
       isActive: product.isActive,
     })
+    validateBarcode(product.barcode || '')
+    setLastScan(null)
     setDialogOpen(true)
+    startScan()
   }
 
   const handleSubmit = async () => {
@@ -153,7 +241,7 @@ export default function ProductsManagement() {
           cost: parseFloat(formData.cost),
           stock: parseInt(formData.stock),
           minStock: parseInt(formData.minStock),
-        }),
+        } as any),
       })
 
       if (response.ok) {
@@ -199,23 +287,159 @@ export default function ProductsManagement() {
     }
   }
 
-  const lowStockProducts = products.filter((p) => p.stock <= p.minStock)
+  // Export products to CSV
+  const handleExportCSV = () => {
+    const headers = ['Name', 'SKU', 'Barcode', 'Price', 'Cost', 'Stock', 'Min Stock', 'Category', 'Description', 'Status']
+    const csvContent = [
+      headers.join(','),
+      ...products.map(product => [
+        `"${product.name}"`,
+        product.sku,
+        product.barcode || '',
+        product.price,
+        product.cost,
+        product.stock,
+        product.minStock,
+        `"${product.category.name}"`,
+        `"${product.description || ''}"`,
+        product.isActive ? 'Active' : 'Inactive'
+      ].join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `products_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: 'Export successful',
+      description: 'Products exported to CSV',
+    })
+  }
+
+  // Import products from CSV
+  const handleImportCSV = async (file: File) => {
+    const text = await file.text()
+    const lines = text.split('\n').filter(line => line.trim())
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+    
+    const results = { success: 0, errors: 0, errorMessages: [] as string[] }
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
+      if (values.length < headers.length) continue
+      
+      const productData: any = {}
+      headers.forEach((header, index) => {
+        const key = header.toLowerCase().replace(' ', '')
+        productData[key] = values[index] || ''
+      })
+      
+      try {
+        // Validate required fields
+        if (!productData.name || !productData.sku || !productData.price) {
+          results.errors++
+          results.errorMessages.push(`Row ${i}: Missing required fields (Name, SKU, Price)`)
+          continue
+        }
+        
+        // Find category by name
+        const category = categories.find(c => 
+          c.name.toLowerCase() === productData.category?.toLowerCase()
+        )
+        
+        if (!category) {
+          results.errors++
+          results.errorMessages.push(`Row ${i}: Category "${productData.category}" not found`)
+          continue
+        }
+        
+        const response = await fetch('/api/pos/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: productData.name,
+            sku: productData.sku,
+            barcode: productData.barcode || null,
+            price: parseFloat(productData.price),
+            cost: parseFloat(productData.cost) || 0,
+            stock: parseInt(productData.stock) || 0,
+            minStock: parseInt(productData.minstock) || 0,
+            categoryId: category.id,
+            description: productData.description || null,
+            isActive: productData.status?.toLowerCase() !== 'inactive'
+          })
+        })
+        
+        if (response.ok) {
+          results.success++
+        } else {
+          const error = await response.text()
+          results.errors++
+          results.errorMessages.push(`Row ${i}: ${error}`)
+        }
+      } catch (error) {
+        results.errors++
+        results.errorMessages.push(`Row ${i}: ${error}`)
+      }
+    }
+    
+    toast({
+      title: 'Import completed',
+      description: `${results.success} products imported, ${results.errors} errors`,
+      variant: results.errors > 0 ? 'destructive' : 'default'
+    })
+    
+    if (results.errorMessages.length > 0) {
+      console.log('Import errors:', results.errorMessages)
+    }
+    
+    setImportDialogOpen(false)
+    loadData()
+  }
+
+  const lowStockProducts = products.filter((p) => 
+    p.stock <= (p.minStock || store?.globalMinStock || 5)
+  )
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-150">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
+          <p className="text-gray-300 font-medium">Loading products...</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
+      {/* Store Header */}
+      {store && (
+        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500/20 shadow-md">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Store className="w-5 h-5 text-gray-500" />
+              <div>
+                <h2 className="font-semibold text-gray-500">{store.name} - Inventory Management</h2>
+                {store.address && <p className="text-sm text-gray-300">{store.address}</p>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+        <Card className="border-blue-accent/30 bg-linear-to-r from-blue-accent/10 to-blue-secondary/10">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+            <div className="flex items-center gap-2 text-blue-accent">
               <AlertCircle className="w-5 h-5" />
               <span className="font-medium">
                 {lowStockProducts.length} product(s) are low on stock
@@ -226,30 +450,48 @@ export default function ProductsManagement() {
       )}
 
       {/* Products List */}
-      <Card>
-        <CardHeader>
+      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+        <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <CardTitle>Products</CardTitle>
+              <CardTitle className="text-gray-500">Products</CardTitle>
               <CardDescription>
                 Manage your product inventory ({products.length} total)
               </CardDescription>
             </div>
-            <Button onClick={handleAdd}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleAdd} className="bg-amber-600 hover:bg-blue-accent text-white shadow-lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setImportDialogOpen(true)}
+                className="border-blue-500/20 text-gray-500 hover:bg-amber-600"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleExportCSV}
+                className="border-blue-500/20 text-gray-500 hover:bg-amber-600"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
                 placeholder="Search products, SKU, or barcode..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
@@ -257,36 +499,36 @@ export default function ProductsManagement() {
           <ScrollArea className="h-[calc(100vh-350px)]">
             <div className="grid gap-4">
               {filteredProducts.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <div className="text-center py-12 text-gray-400 ">
+                  <Package className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
                   <p>No products found</p>
                 </div>
               ) : (
                 filteredProducts.map((product) => (
-                  <Card key={product.id} className="hover:shadow-md transition-shadow">
+                  <Card key={product.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500/20 hover:border-blue-primary/50">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold truncate">{product.name}</h3>
+                            <h3 className="font-semibold truncate text-gray-500">{product.name}</h3>
                             {!product.isActive && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-300">
                                 Inactive
                               </Badge>
                             )}
                           </div>
-                          <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap gap-2 text-sm text-gray-400 ">
                             <span>SKU: {product.sku}</span>
                             {product.barcode && <span>• Barcode: {product.barcode}</span>}
                           </div>
                           <div className="flex flex-wrap gap-4 mt-2 text-sm">
-                            <Badge variant="outline">{product.category.name}</Badge>
-                            <span className="font-medium text-primary">${product.price.toFixed(2)}</span>
+                            <Badge variant="outline" className="border-blue-primary/30 bg-amber-600 text-gray-500">{product.category.name}</Badge>
+                            <span className="font-medium text-gray-500">{formatCurrency(product.price)}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge
-                            variant={product.stock <= product.minStock ? 'destructive' : 'secondary'}
+                            variant={product.stock <= (product.minStock || store?.globalMinStock || 5) ? 'destructive' : 'secondary'}
                           >
                             Stock: {product.stock}
                           </Badge>
@@ -294,6 +536,7 @@ export default function ProductsManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(product)}
+                            className="text-gray-500 hover:text-white hover:bg-amber-600"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -301,7 +544,7 @@ export default function ProductsManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(product.id)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-gray-400 hover:text-white hover:bg-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -318,9 +561,9 @@ export default function ProductsManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-gray-500">
               {editingProduct ? 'Edit Product' : 'Add New Product'}
             </DialogTitle>
             <DialogDescription>
@@ -330,43 +573,114 @@ export default function ProductsManagement() {
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Product Name *</Label>
+              <Label htmlFor="name" className="text-gray-500">Product Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="sku">SKU *</Label>
+                <Label htmlFor="sku" className="text-gray-500">SKU *</Label>
                 <Input
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="barcode">Barcode</Label>
-                <Input
-                  id="barcode"
-                  value={formData.barcode}
-                  onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                />
+                <Label htmlFor="barcode" className="text-gray-500">Barcode</Label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      id="barcode"
+                      value={formData.barcode}
+                      onChange={(e) => {
+                        setFormData({ ...formData, barcode: e.target.value })
+                        validateBarcode(e.target.value)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const code = e.currentTarget.value.trim()
+                          if (code) {
+                            manualInput(code)
+                          }
+                        }
+                      }}
+                      placeholder="Scan or enter barcode..."
+                      className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleCamera}
+                      className={`border-blue-500/20 hover:bg-amber-600 ${
+                        isCameraActive ? 'text-red-400 border-red-400/50' : 'text-gray-500'
+                      }`}
+                      title={isCameraActive ? 'Stop camera scanning' : 'Start camera scanning'}
+                    >
+                      {isCameraActive ? <CameraOff className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  
+                  {/* Barcode Validation Feedback */}
+                  {barcodeValidation && (
+                    <div className={`flex items-center gap-2 text-sm ${
+                      barcodeValidation.isValid ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {barcodeValidation.isValid ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      {barcodeValidation.isValid ? (
+                        <span>Valid {barcodeValidation.format} format</span>
+                      ) : (
+                        <span>{barcodeValidation.error}</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Last Scan Display */}
+                  {lastScan && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Zap className="w-4 h-4" />
+                      <span>Last scan: {lastScan.code}</span>
+                      {lastScan.format && (
+                        <Badge variant="outline" className="text-xs px-1 py-0">
+                          {lastScan.format}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Scanner Status */}
+                  <div className="flex items-center gap-2 text-xs text-gray-400 ">
+                    <div className={`w-2 h-2 rounded-full ${
+                      isScanning ? 'bg-green-400 animate-pulse' : 'bg-gray-500'
+                    }`} />
+                    <span>{isScanning ? 'Scanner Active' : 'Scanner Inactive'}</span>
+                    {scannerError && <span className="text-red-400">Error: {scannerError}</span>}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="category" className="text-gray-500">Category *</Label>
               <Select
                 value={formData.categoryId}
                 onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
               >
-                <SelectTrigger id="category">
+                <SelectTrigger id="category" className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-gray-800 border-blue-500/20">
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -378,65 +692,117 @@ export default function ProductsManagement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="price">Price *</Label>
+                <Label htmlFor="price" className="text-gray-500">Price *</Label>
                 <Input
                   id="price"
                   type="number"
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="cost">Cost</Label>
+                <Label htmlFor="cost" className="text-gray-500">Cost</Label>
                 <Input
                   id="cost"
                   type="number"
                   step="0.01"
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="stock">Stock *</Label>
+                <Label htmlFor="stock" className="text-gray-500">Stock *</Label>
                 <Input
                   id="stock"
                   type="number"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="minStock">Min Stock Alert</Label>
+                <Label htmlFor="minStock" className="text-gray-500">Min Stock Alert</Label>
                 <Input
                   id="minStock"
                   type="number"
                   value={formData.minStock}
                   onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-gray-500">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500/20">
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-blue-accent text-white">
               {editingProduct ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import CSV Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
+          <DialogHeader>
+            <DialogTitle className="text-gray-500">Import Products from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file with product data. Expected columns: Name, SKU, Barcode, Price, Cost, Stock, Min Stock, Category, Description, Status
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="border-2 border-dashed border-blue-500/20 rounded-lg p-6 text-center">
+              <Upload className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
+              <p className="text-gray-500/70 mb-2">Click to upload CSV file</p>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleImportCSV(file)
+                }}
+                className="hidden"
+                id="csv-upload"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => document.getElementById('csv-upload')?.click()}
+                className="border-blue-500/20 text-gray-500 hover:bg-amber-600"
+              >
+                Select CSV File
+              </Button>
+            </div>
+            
+            <div className="text-xs text-gray-400 ">
+              <p className="font-medium mb-1">CSV Format:</p>
+              <p>Name, SKU, Barcode, Price, Cost, Stock, Min Stock, Category, Description, Status</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)} className="border-blue-500/20">
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

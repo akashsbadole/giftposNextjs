@@ -30,7 +30,7 @@ export async function GET() {
 
     // If employee doesn't exist, try to create one
     if (!employee) {
-      const email = sessionClaims?.email as string
+      const email = sessionClaims?.email as string | undefined
       const name = (sessionClaims?.name as string) || email?.split('@')[0] || 'User'
 
       // Get or create store
@@ -54,15 +54,24 @@ export async function GET() {
         )
       }
 
-      // Create employee
+      // Create employee - handle email for unique constraint
+      const employeeData: any = {
+        clerkId: userId,
+        name,
+        storeId: store.id,
+        role: employeeCount === 0 ? 'admin' : 'staff', // First user becomes admin
+      }
+      
+      // Set email only if available and valid, otherwise generate a unique identifier
+      if (email && email.trim()) {
+        employeeData.email = email.toLowerCase()
+      } else {
+        // Generate a unique identifier for users without email
+        employeeData.email = `user_${userId}@pos.local`
+      }
+      
       employee = await db.employee.create({
-        data: {
-          clerkId: userId,
-          name,
-          email,
-          storeId: store.id,
-          role: employeeCount === 0 ? 'admin' : 'staff', // First user becomes admin
-        },
+        data: employeeData,
       })
     }
 

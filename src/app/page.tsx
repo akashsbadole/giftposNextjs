@@ -21,7 +21,7 @@ export default function Home() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('pos')
   const [employee, setEmployee] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (isLoaded && !userId) {
@@ -72,7 +72,7 @@ export default function Home() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -82,29 +82,29 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      {/* Header */}
-      <header className="border-b bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-[#384077]">
+      {/* Header: Professional Blue Theme */}
+      <header className="border-b bg-linear-to-r from-blue-primary to-blue-secondary backdrop-blur-sm sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <Store className="w-6 h-6 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Retail POS</h1>
-                <p className="text-sm text-muted-foreground">Point of Sale System</p>
+              <div className="text-white drop-shadow-sm">
+                <h1 className="text-xl font-bold text-white">GiftPOS</h1>
+                <p className="text-sm text-blue-light">Point of Sale System</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               {/* Employee Info Badge */}
               {employee && (
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
-                  <Shield className="w-4 h-4 text-primary" />
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-full border border-white/30 backdrop-blur-sm">
+                  <Shield className="w-4 h-4 text-white" />
                   <div className="text-xs">
-                    <span className="font-medium">{employee.name}</span>
-                    <span className="text-muted-foreground ml-1">
+                    <span className="font-medium text-white">{employee.name}</span>
+                    <span className="text-blue-light ml-1">
                       ({employee.role})
                     </span>
                   </div>
@@ -113,7 +113,7 @@ export default function Home() {
 
               {/* User Actions */}
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={signOut}>
+                <Button variant="ghost" size="icon" onClick={signOut} className="text-white hover:text-blue-light hover:bg-white/20">
                   <LogOut className="w-5 h-5" />
                 </Button>
                 <UserButton afterSignOutUrl="/sign-in" />
@@ -125,14 +125,14 @@ export default function Home() {
 
       {/* Employee Access Alert */}
       {employee && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-800">
+        <div className="bg-linear-to-r from-blue-accent/20 to-blue-secondary/20 border-b border-blue-accent/30 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-2">
-            <div className="flex items-center justify-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+            <div className="flex items-center justify-center gap-2 text-sm text-white">
               <Shield className="w-4 h-4" />
-              <span>
+              <span className="font-medium">
                 {employee.role === 'admin' ? 'Admin Access' : `${employee.role} Access`}
               </span>
-              <span className="text-muted-foreground">
+              <span className="text-blue-light">
                 - Limited to {3} employees maximum
               </span>
             </div>
@@ -143,31 +143,31 @@ export default function Home() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full mb-6 overflow-x-auto">
-            <TabsTrigger value="pos" className="min-w-[80px] gap-2">
-              <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+          <TabsList className="w-full mb-6 overflow-x-auto bg-gray-800/50 backdrop-blur-sm border border-blue-border rounded-xl p-1">
+            <TabsTrigger value="pos" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">
+              <ShoppingCart className="w-4 h-4 shrink-0" />
               <span>POS</span>
             </TabsTrigger>
-            <TabsTrigger value="products" className="min-w-[80px] gap-2">
-              <Package className="w-4 h-4 flex-shrink-0" />
+            <TabsTrigger value="products" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">
+              <Package className="w-4 h-4 shrink-0" />
               <span>Products</span>
             </TabsTrigger>
-            <TabsTrigger value="customers" className="min-w-[80px] gap-2">
-              <Users className="w-4 h-4 flex-shrink-0" />
+            <TabsTrigger value="customers" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">
+              <Users className="w-4 h-4 shrink-0" />
               <span>Customers</span>
             </TabsTrigger>
             {(employee?.role === 'admin' || employee?.role === 'manager') && (
-              <TabsTrigger value="employees" className="min-w-[80px] gap-2">
-                <Users2 className="w-4 h-4 flex-shrink-0" />
+              <TabsTrigger value="employees" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">
+                <Users2 className="w-4 h-4 shrink-0" />
                 <span>Employees</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="reports" className="min-w-[80px] gap-2">
-              <BarChart3 className="w-4 h-4 flex-shrink-0" />
+            <TabsTrigger value="reports" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">
+              <BarChart3 className="w-4 h-4 shrink-0" />
               <span>Reports</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="min-w-[80px] gap-2">
-              <Settings className="w-4 h-4 flex-shrink-0" />
+            <TabsTrigger value="settings" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">
+              <Settings className="w-4 h-4 shrink-0" />
               <span>Settings</span>
             </TabsTrigger>
           </TabsList>

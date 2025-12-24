@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+import { useSettings } from '@/lib/settings-context'
 import {
   DollarSign,
   ShoppingCart,
@@ -34,6 +35,7 @@ import {
   ArrowDown,
   Calendar,
   Filter,
+  Store,
 } from 'lucide-react'
 
 interface Sale {
@@ -74,6 +76,7 @@ interface Stats {
 
 export default function SalesReport() {
   const { toast } = useToast()
+  const { store, formatCurrency } = useSettings()
   const [sales, setSales] = useState<Sale[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -95,6 +98,13 @@ export default function SalesReport() {
 
   const loadSalesData = async () => {
     try {
+      // First, sync the user to create employee record
+      const syncRes = await fetch('/api/auth/sync-user')
+      if (!syncRes.ok) {
+        console.error('Failed to sync user:', await syncRes.text())
+        return
+      }
+
       const [salesRes, statsRes] = await Promise.all([
         fetch('/api/pos/sales'),
         fetch('/api/pos/sales/stats'),
@@ -165,18 +175,6 @@ export default function SalesReport() {
         }
       default:
         return { currentStart: null, currentEnd: null, previousStart: null, previousEnd: null }
-    }
-
-    if (filter === 'custom') {
-      if (!customStartDate || !customEndDate) {
-        return { currentStart: null, currentEnd: null, previousStart: null, previousEnd: null }
-      }
-      return {
-        currentStart: new Date(customStartDate),
-        currentEnd: new Date(customEndDate),
-        previousStart: null,
-        previousEnd: null,
-      }
     }
 
     return {
@@ -273,8 +271,11 @@ export default function SalesReport() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-150">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
+          <p className="text-gray-300 font-medium">Loading sales data...</p>
+        </div>
       </div>
     )
   }
@@ -294,30 +295,30 @@ export default function SalesReport() {
     prefix?: string
     suffix?: string
   }) => (
-    <Card>
+    <Card className="bg-gray-800 border-blue-500/20 shadow-md hover:shadow-lg transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-2">
+            <p className="text-sm font-medium text-gray-400 ">{title}</p>
+            <p className="text-2xl font-bold mt-2 text-gray-500">
               {prefix}{typeof value === 'number' ? value.toLocaleString() : value}{suffix}
             </p>
             {trend !== undefined && (
               <div className="flex items-center mt-2 text-sm">
                 {trend >= 0 ? (
-                  <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
+                  <ArrowUp className="w-4 h-4 text-green-400 mr-1" />
                 ) : (
-                  <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
+                  <ArrowDown className="w-4 h-4 text-red-400 mr-1" />
                 )}
-                <span className={trend >= 0 ? 'text-green-600' : 'text-red-600'}>
+                <span className={trend >= 0 ? 'text-green-400' : 'text-red-400'}>
                   {Math.abs(trend)}%
                 </span>
-                <span className="text-muted-foreground ml-1">from last period</span>
+                <span className="text-gray-400  ml-1">from last period</span>
               </div>
             )}
           </div>
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <Icon className="w-6 h-6 text-primary" />
+          <div className="p-3 bg-amber-600 rounded-lg border border-blue-primary/20">
+            <Icon className="w-6 h-6 text-gray-500" />
           </div>
         </div>
       </CardContent>
@@ -326,10 +327,35 @@ export default function SalesReport() {
 
   return (
     <div className="space-y-6">
+      {/* Store Header */}
+      {store && (
+        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500/20 shadow-lg">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Store className="w-6 h-6 text-gray-500" />
+                <h1 className="text-2xl font-bold text-gray-500">{store.name}</h1>
+              </div>
+              {store.address && <p className="text-gray-300">{store.address}</p>}
+              {store.phone && <p className="text-gray-300">Tel: {store.phone}</p>}
+              {store.email && <p className="text-gray-300">{store.email}</p>}
+              <div className="mt-4 pt-4 border-t border-blue-500/20">
+                <h2 className="text-lg font-semibold text-gray-500">Sales Report</h2>
+                {store.showGST && (
+                  <p className="text-sm text-gray-400  mt-1">
+                    GST Rate: {store.gstRate}%
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Date Filter Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+        <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
+          <CardTitle className="flex items-center gap-2 text-gray-500">
             <Filter className="w-5 h-5" />
             Time Filter
           </CardTitle>
@@ -338,11 +364,11 @@ export default function SalesReport() {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
-              <SelectTrigger className="w-[200px]">
-                <Calendar className="w-4 h-4 mr-2" />
+              <SelectTrigger className="w-50 border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-800 border-blue-500/20">
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="week">Last 7 days</SelectItem>
                 <SelectItem value="month">Last 30 days</SelectItem>
@@ -359,12 +385,14 @@ export default function SalesReport() {
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
                   placeholder="Start date"
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
                 <Input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
                   placeholder="End date"
+                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
             )}
@@ -379,7 +407,7 @@ export default function SalesReport() {
             title="Total Revenue"
             value={filteredStats.totalRevenue}
             icon={DollarSign}
-            prefix="$"
+            prefix={store?.currency ? `${store.currency} ` : '$'}
             trend={calculateTrend(
               filteredStats.totalRevenue,
               previousPeriodStats?.totalRevenue || 0
@@ -416,16 +444,16 @@ export default function SalesReport() {
       )}
 
       <Tabs defaultValue="sales" className="w-full">
-        <TabsList>
-          <TabsTrigger value="sales">Sales History</TabsTrigger>
-          <TabsTrigger value="products">Top Products</TabsTrigger>
-          <TabsTrigger value="payment">Payment Methods</TabsTrigger>
+        <TabsList className="bg-gray-800 border border-blue-500/20 rounded-lg p-1">
+          <TabsTrigger value="sales" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded-md">Sales History</TabsTrigger>
+          <TabsTrigger value="products" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded-md">Top Products</TabsTrigger>
+          <TabsTrigger value="payment" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded-md">Payment Methods</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Sales</CardTitle>
+          <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+            <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
+              <CardTitle className="text-gray-500">Recent Sales</CardTitle>
               <CardDescription>
                 View and manage your sales transactions
                 {filteredSales.length > 0 && (
@@ -436,8 +464,8 @@ export default function SalesReport() {
             <CardContent>
               <ScrollArea className="h-[calc(100vh-400px)]">
                 {filteredSales.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-center py-12 text-gray-400 ">
+                    <Receipt className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
                     <p>No sales recorded in this period</p>
                     <p className="text-sm mt-1">Try selecting a different time range</p>
                   </div>
@@ -446,14 +474,14 @@ export default function SalesReport() {
                     {filteredSales.map((sale) => (
                       <Card
                         key={sale.id}
-                        className="hover:shadow-md transition-shadow cursor-pointer"
+                        className="hover:shadow-lg transition-all cursor-pointer bg-gray-800 border-blue-500/20 hover:border-blue-primary/50"
                         onClick={() => setSelectedSale(sale)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="outline">{sale.invoiceNumber}</Badge>
+                                <Badge variant="outline" className="border-white bg-amber-600 text-white">{sale.invoiceNumber}</Badge>
                                 <Badge
                                   variant={
                                     sale.status === 'completed'
@@ -467,16 +495,16 @@ export default function SalesReport() {
                                 </Badge>
                               </div>
                               <div className="space-y-1 text-sm">
-                                <p className="font-medium text-lg">${sale.total.toFixed(2)}</p>
-                                <p className="text-muted-foreground">
+                                <p className="font-medium text-lg text-gray-500">{formatCurrency(sale.total)}</p>
+                                <p className="text-gray-400 ">
                                   {sale.items.length} {sale.items.length === 1 ? 'item' : 'items'}
                                 </p>
                                 {sale.customer && (
-                                  <p className="text-muted-foreground">
+                                  <p className="text-gray-400 ">
                                     Customer: {sale.customer.name}
                                   </p>
                                 )}
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-gray-400 ">
                                   {new Date(sale.createdAt).toLocaleString()}
                                 </p>
                               </div>
@@ -489,6 +517,7 @@ export default function SalesReport() {
                                   ? 'default'
                                   : 'outline'
                               }
+                              className="capitalize"
                             >
                               {sale.paymentMethod}
                             </Badge>
@@ -504,33 +533,33 @@ export default function SalesReport() {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Products</CardTitle>
+          <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+            <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
+              <CardTitle className="text-gray-500">Top Products</CardTitle>
               <CardDescription>Best selling products by quantity and revenue</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[calc(100vh-400px)]">
                 {!stats?.topProducts || stats.topProducts.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-center py-12 text-gray-400 ">
+                    <Package className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
                     <p>No product sales data yet</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {stats.topProducts.map((product, index) => (
-                      <Card key={index}>
+                      <Card key={index} className="bg-gray-800 border-blue-500/20 hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium">{product.name}</h4>
-                              <p className="text-sm text-muted-foreground">
+                              <h4 className="font-medium text-gray-500">{product.name}</h4>
+                              <p className="text-sm text-gray-400 ">
                                 {product.quantity} sold
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-lg">${product.revenue.toFixed(2)}</p>
-                              <p className="text-sm text-muted-foreground">revenue</p>
+                              <p className="font-semibold text-lg text-gray-500">{formatCurrency(product.revenue)}</p>
+                              <p className="text-sm text-gray-400 ">revenue</p>
                             </div>
                           </div>
                         </CardContent>
@@ -544,33 +573,33 @@ export default function SalesReport() {
         </TabsContent>
 
         <TabsContent value="payment" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Methods</CardTitle>
+          <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+            <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
+              <CardTitle className="text-gray-500">Payment Methods</CardTitle>
               <CardDescription>Breakdown of sales by payment method</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[calc(100vh-400px)]">
                 {!stats?.salesByPayment || stats.salesByPayment.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-center py-12 text-gray-400 ">
+                    <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
                     <p>No payment data yet</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {stats.salesByPayment.map((payment, index) => (
-                      <Card key={index}>
+                      <Card key={index} className="bg-gray-800 border-blue-500/20 hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium capitalize">{payment.method}</h4>
-                              <p className="text-sm text-muted-foreground">
+                              <h4 className="font-medium capitalize text-gray-500">{payment.method}</h4>
+                              <p className="text-sm text-gray-400 ">
                                 {payment.count} {payment.count === 1 ? 'transaction' : 'transactions'}
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-lg">${payment.total.toFixed(2)}</p>
-                              <p className="text-sm text-muted-foreground">total</p>
+                              <p className="font-semibold text-lg text-gray-500">{formatCurrency(payment.total)}</p>
+                              <p className="text-sm text-gray-400 ">total</p>
                             </div>
                           </div>
                         </CardContent>
@@ -590,28 +619,28 @@ export default function SalesReport() {
           open={!!selectedSale}
           onOpenChange={() => setSelectedSale(null)}
         >
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
             <DialogHeader>
-              <DialogTitle>Receipt Details</DialogTitle>
+              <DialogTitle className="text-gray-500">Receipt Details</DialogTitle>
               <DialogDescription>Invoice #{selectedSale.invoiceNumber}</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Date</span>
-                <span>{new Date(selectedSale.createdAt).toLocaleString()}</span>
+              <div className="flex justify-between text-sm text-blue-100">
+                <span className="text-gray-400 ">Date</span>
+                <span className="text-gray-500 ">{new Date(selectedSale.createdAt).toLocaleString()}</span>
               </div>
 
               {selectedSale.customer && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Customer</span>
-                  <span>{selectedSale.customer.name}</span>
+                <div className="flex justify-between text-sm text-blue-100">
+                  <span className="text-gray-400 ">Customer</span>
+                  <span className="text-gray-500 ">{selectedSale.customer.name}</span>
                 </div>
               )}
 
               {selectedSale.employee && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cashier</span>
+                <div className="flex justify-between text-sm text-blue-100">
+                  <span className="text-gray-400 ">Cashier</span>
                   <span>{selectedSale.employee.name}</span>
                 </div>
               )}
@@ -619,16 +648,16 @@ export default function SalesReport() {
               <Separator />
 
               <div className="space-y-2">
-                <h4 className="font-medium">Items</h4>
+                <h4 className="font-medium text-gray-500">Items</h4>
                 {selectedSale.items.map((item, index) => (
-                  <div key={index} className="flex justify-between text-sm">
+                  <div key={index} className="flex justify-between text-sm text-blue-100">
                     <div>
                       <span>{item.product.name}</span>
-                      <span className="text-muted-foreground ml-2">
+                      <span className="text-gray-400  ml-2">
                         x{item.quantity}
                       </span>
                     </div>
-                    <span>${item.subtotal.toFixed(2)}</span>
+                    <span className="font-medium text-gray-500">{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
               </div>
@@ -636,30 +665,30 @@ export default function SalesReport() {
               <Separator />
 
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-blue-100">
                   <span>Subtotal</span>
-                  <span>${selectedSale.subtotal.toFixed(2)}</span>
+                  <span className="font-medium text-gray-500">{formatCurrency(selectedSale.subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-blue-100">
                   <span>Tax</span>
-                  <span>${selectedSale.tax.toFixed(2)}</span>
+                  <span className="font-medium text-gray-500">{formatCurrency(selectedSale.tax)}</span>
                 </div>
                 {selectedSale.discount > 0 && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm text-blue-100">
                     <span>Discount</span>
-                    <span>-${selectedSale.discount.toFixed(2)}</span>
+                    <span className="font-medium text-gray-500">-{formatCurrency(selectedSale.discount)}</span>
                   </div>
                 )}
-                <Separator />
-                <div className="flex justify-between font-bold">
+                <Separator className="border-blue-500/20" />
+                <div className="flex justify-between font-bold text-gray-500">
                   <span>Total</span>
-                  <span>${selectedSale.total.toFixed(2)}</span>
+                  <span>{formatCurrency(selectedSale.total)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Payment Method</span>
-                <Badge variant="outline" className="capitalize">
+                <span className="text-sm text-gray-400 ">Payment Method</span>
+                <Badge variant="outline" className="capitalize border-blue-primary/30 bg-amber-600 text-gray-500">
                   {selectedSale.paymentMethod}
                 </Badge>
               </div>

@@ -50,7 +50,29 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+        
+        // Custom Blue Color Scheme
+        'blue-primary': '#2563eb',
+        'blue-secondary': '#3b82f6',
+        'blue-accent': '#60a5fa',
+        'blue-light': '#93c5fd',
+        'blue-dark': '#1e40af',
+        'navy-blue': '#1e3a8a',
+        'deep-blue': '#1e1b4b',
+        'midnight-blue': '#0f172a',
+        'slate-blue': '#475569',
+        'steel-blue': '#64748b',
+        
+        // Blue gradients and variations
+        'blue-primary-var': 'var(--primary)',
+        'blue-secondary-var': 'var(--secondary)',
+        'blue-muted': 'var(--muted)',
+        'blue-accent-var': 'var(--accent)',
+        'blue-background': 'var(--background)',
+        'blue-card': 'var(--card)',
+        'blue-border': 'var(--border)',
+        'blue-ring': 'var(--ring)',
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

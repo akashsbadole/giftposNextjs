@@ -21,11 +21,13 @@ model Store {
   currency     String   @default("USD")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  categories   Category[]
-  products     Product[]
-  customers    Customer[]
-  sales        Sale[]
-  employees    Employee[]
+  categories         Category[]
+  products           Product[]
+  customers          Customer[]
+  sales              Sale[]
+  employees          Employee[]
+  printers           Printer[]
+  paymentProviders   PaymentProvider[]
 }
 
 // Category for organizing products
@@ -113,10 +115,11 @@ model Sale {
   customer      Customer? @relation(fields: [customerId], references: [id])
   employeeId    String?
   employee      Employee? @relation(fields: [employeeId], references: [id])
-  items         SaleItem[]
-  payment       Payment?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  items           SaleItem[]
+  payment         Payment?
+  transactions    PaymentTransaction[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 // Items in a sale
@@ -155,4 +158,170 @@ model StockLog {
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   employeeId  String?  // Who made the change
   createdAt   DateTime @default(now())
+}
+
+// Printer device management
+model Printer {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   // thermal, inkjet, label, laser
+  brand         String   // epson, star, tvs, hp, canon, etc.
+  model         String
+  connection    String   // usb, bluetooth, network, wifi
+  status        String   @default("offline") // online, offline, error, printing
+  isDefault     Boolean  @default(false)
+  settings      String?  // JSON string with printer-specific settings
+  capabilities  String?  // JSON string with printer capabilities
+  lastConnected DateTime?
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  printJobs     PrintJob[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Print job queue
+model PrintJob {
+  id         String   @id @default(cuid())
+  type       String   // receipt, invoice, label, report
+  content    String   // Content to print (ESC/POS commands, text, etc.)
+  status     String   @default("pending") // pending, printing, completed, failed
+  priority   Int      @default(0) // Higher numbers = higher priority
+  retryCount Int      @default(0)
+  error      String?  // Error message if failed
+  printerId  String
+  printer    Printer  @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  startedAt  DateTime?
+  completedAt DateTime?
+}
+
+// Payment Provider Configuration
+model PaymentProvider {
+  id          String   @id @default(cuid())
+  name        String   // paytm, pinelabs, razorpay, etc.
+  displayName String   // Display name for UI
+  type        String   // terminal, api, hybrid
+  isActive    Boolean  @default(true)
+  config      String?  // JSON configuration (API keys, endpoints, etc.)
+  capabilities String? // JSON array of supported payment methods
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  terminals   TerminalIntegration[]
+  transactions PaymentTransaction[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Payment Terminal Integration
+model TerminalIntegration {
+  id            String   @id @default(cuid())
+  name          String   // Terminal name/identifier
+  serialNumber  String?  // Hardware serial number
+  terminalId    String   // Provider terminal ID
+  model         String?  // Terminal model (e.g., Paytm Soundbox, PineLabs Ezetap)
+  status        String   @default("offline") // online, offline, error, busy
+  lastHeartbeat DateTime? // Last communication timestamp
+  capabilities  String?  // JSON array of supported features
+  settings      String?  // JSON terminal-specific settings
+  providerId    String
+  provider      PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  transactions  PaymentTransaction[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Payment Transaction
+model PaymentTransaction {
+  id              String   @id @default(cuid())
+  transactionId   String?  // Provider transaction ID
+  orderId         String?  // Internal order reference
+  amount          Float
+  currency        String   @default("INR")
+  paymentMethod   String   // card_swipe, upi, wallet, emi, netbanking
+  status          String   @default("pending") // pending, processing, completed, failed, cancelled, refunded
+  providerStatus  String?  // Raw status from provider
+  customerInfo    String?  // JSON customer details
+  responseData    String?  // JSON full response from provider
+  failureReason   String?  // Error message if failed
+  refundAmount    Float?   // Amount refunded
+  refundReason    String?  // Reason for refund
+  terminalId      String?
+  terminal        TerminalIntegration? @relation(fields: [terminalId], references: [id])
+  providerId      String
+  provider        PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  saleId          String?
+  sale            Sale?    @relation(fields: [saleId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+}
+
+// Audit Log for security tracking
+model AuditLog {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+  userId         String?  // Clerk user ID
+  userEmail      String?
+  action         String   // What action was performed
+  resource       String   // What resource was accessed
+  resourceId     String?  // ID of the specific resource
+  method         String   // HTTP method used
+  path           String   // API path or route
+  ipAddress      String?
+  userAgent      String?
+  status         String   @default("success") // success, failure, warning
+  severity       String   @default("low") // low, medium, high, critical
+  details        String?  // JSON additional details
+  previousValues String?  // JSON previous values (for updates)
+  newValues      String?  // JSON new values (for updates)
+  sessionId      String?
+  correlationId  String   // For request tracing
+  createdAt      DateTime @default(now())
+}
+
+// Security Events for monitoring
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())
+  eventType   String   // failed_login, rate_limit_exceeded, suspicious_activity, etc.
+  severity    String   @default("low") // low, medium, high, critical
+  userId      String?
+  userEmail   String?
+  ipAddress   String?
+  userAgent   String?
+  path        String?
+  method      String?
+  description String   // Human-readable description
+  details     String?  // JSON additional details
+  resolved    Boolean  @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  prevention  String?  // JSON array of prevention measures
+  createdAt   DateTime @default(now())
+}
+
+// Error Log for comprehensive error tracking
+model ErrorLog {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+  level          String   // debug, info, warn, error, critical
+  type           String   // application, security, audit, performance, business, error
+  message        String
+  data           String?  // JSON additional data
+  userId         String?
+  userEmail      String?
+  sessionId      String?
+  requestId      String?
+  route          String?
+  method         String?
+  ipAddress      String?
+  userAgent      String?
+  source         String   @default("backend") // frontend, backend, api, worker, cron
+  environment    String   @default("development")
+  correlationId  String?
+  stackTrace     String?
+  isSensitive    Boolean  @default(false)
+  tags           String?  // JSON array of tags
+  createdAt      DateTime @default(now())
 }

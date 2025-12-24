@@ -65,6 +65,13 @@ export default function CustomersManagement() {
 
   const loadCustomers = async () => {
     try {
+      // First, sync the user to create employee record
+      const syncRes = await fetch('/api/auth/sync-user')
+      if (!syncRes.ok) {
+        console.error('Failed to sync user:', await syncRes.text())
+        return
+      }
+
       const response = await fetch('/api/pos/customers')
       if (response.ok) {
         const data = await response.json()
@@ -205,24 +212,27 @@ export default function CustomersManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-150">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
+          <p className="text-gray-300 font-medium">Loading customers...</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
+      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+        <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <CardTitle>Customers</CardTitle>
+              <CardTitle className="text-gray-500">Customers</CardTitle>
               <CardDescription>
                 Manage your customer database ({customers.length} total)
               </CardDescription>
             </div>
-            <Button onClick={handleAdd}>
+            <Button onClick={handleAdd} className="bg-amber-600 hover:bg-blue-accent text-white shadow-lg">
               <Plus className="w-4 h-4 mr-2" />
               Add Customer
             </Button>
@@ -231,12 +241,12 @@ export default function CustomersManagement() {
         <CardContent>
           <div className="flex gap-4 mb-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
                 placeholder="Search customers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
@@ -244,8 +254,8 @@ export default function CustomersManagement() {
           <ScrollArea className="h-[calc(100vh-350px)]">
             <div className="grid gap-4">
               {filteredCustomers.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <div className="text-center py-12 text-gray-400 ">
+                  <User className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
                   <p>No customers found</p>
                 </div>
               ) : (
@@ -255,19 +265,19 @@ export default function CustomersManagement() {
                   const customerHistory = purchaseHistory.get(customer.id) || []
                   
                   return (
-                    <Card key={customer.id} className="hover:shadow-md transition-shadow">
+                    <Card key={customer.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500/20 hover:border-blue-primary/50">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold">{customer.name}</h3>
+                              <h3 className="font-semibold text-gray-500">{customer.name}</h3>
                               {customer.points > 0 && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs bg-amber-600 text-gray-500">
                                   {customer.points} pts
                                 </Badge>
                               )}
                             </div>
-                            <div className="space-y-1 text-sm text-muted-foreground">
+                            <div className="space-y-1 text-sm text-gray-400 ">
                               {customer.email && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="w-3 h-3" />
@@ -302,6 +312,7 @@ export default function CustomersManagement() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(customer)}
+                              className="text-gray-500 hover:text-white hover:bg-amber-600"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -309,7 +320,7 @@ export default function CustomersManagement() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(customer.id)}
-                              className="text-destructive hover:text-destructive"
+                              className="text-gray-400 hover:text-white hover:bg-destructive"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -335,30 +346,30 @@ export default function CustomersManagement() {
                                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                                   </div>
                                 ) : customerHistory.length === 0 ? (
-                                  <div className="text-center py-4 text-muted-foreground">
+                                  <div className="text-center py-4 text-gray-400 ">
                                     <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">No purchase history</p>
                                   </div>
                                 ) : (
                                   <div className="space-y-2 max-h-48 overflow-y-auto">
                                     {customerHistory.map((purchase) => (
-                                      <div key={purchase.id} className="flex items-center justify-between p-2 rounded border bg-muted/30">
+                                      <div key={purchase.id} className="flex items-center justify-between p-2 rounded border border-blue-500/20 bg-gray-800/50">
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant="outline" className="text-xs">
+                                            <Badge variant="outline" className="text-xs border-blue-primary/30 bg-amber-600 text-gray-500">
                                               #{purchase.invoiceNumber}
                                             </Badge>
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <div className="flex items-center gap-1 text-xs text-gray-400 ">
                                               <Calendar className="w-3 h-3" />
                                               {new Date(purchase.createdAt).toLocaleDateString()}
                                             </div>
                                           </div>
-                                          <p className="text-xs text-muted-foreground">
+                                          <p className="text-xs text-gray-400 ">
                                             {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'items'}
                                           </p>
                                         </div>
                                         <div className="text-right">
-                                          <p className="font-semibold text-sm">${purchase.total.toFixed(2)}</p>
+                                          <p className="font-semibold text-sm text-gray-500">${purchase.total.toFixed(2)}</p>
                                         </div>
                                       </div>
                                     ))}
@@ -380,9 +391,9 @@ export default function CustomersManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-gray-500">
               {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
             </DialogTitle>
             <DialogDescription>
@@ -392,53 +403,57 @@ export default function CustomersManagement() {
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name" className="text-gray-500">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="John Doe"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-500">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="john@example.com"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone" className="text-gray-500">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1 234 567 8900"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address" className="text-gray-500">Address</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="123 Main St, City"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500/20">
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-blue-accent text-white">
               {editingCustomer ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>

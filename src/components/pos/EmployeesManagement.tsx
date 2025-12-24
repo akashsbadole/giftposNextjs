@@ -58,6 +58,13 @@ export default function EmployeesManagement() {
 
   const loadEmployees = async () => {
     try {
+      // First, sync the user to create employee record
+      const syncRes = await fetch('/api/auth/sync-user')
+      if (!syncRes.ok) {
+        console.error('Failed to sync user:', await syncRes.text())
+        return
+      }
+
       const response = await fetch('/api/pos/employees')
       if (response.ok) {
         const data = await response.json()
@@ -223,24 +230,27 @@ export default function EmployeesManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-150">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
+          <p className="text-gray-300 font-medium">Loading employees...</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
+      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+        <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <CardTitle>Employees</CardTitle>
+              <CardTitle className="text-gray-500">Employees</CardTitle>
               <CardDescription>
                 Manage your employee database ({employees.length} total)
               </CardDescription>
             </div>
-            <Button onClick={handleAdd}>
+            <Button onClick={handleAdd} className="bg-amber-600 hover:bg-blue-accent text-white shadow-lg">
               <Plus className="w-4 h-4 mr-2" />
               Add Employee
             </Button>
@@ -249,12 +259,12 @@ export default function EmployeesManagement() {
         <CardContent>
           <div className="flex gap-4 mb-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
                 placeholder="Search employees..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
@@ -262,35 +272,35 @@ export default function EmployeesManagement() {
           <ScrollArea className="h-[calc(100vh-350px)]">
             <div className="grid gap-4">
               {filteredEmployees.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <div className="text-center py-12 text-gray-400 ">
+                  <User className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
                   <p>No employees found</p>
                 </div>
               ) : (
                 filteredEmployees.map((employee) => (
-                  <Card key={employee.id} className="hover:shadow-md transition-shadow">
+                  <Card key={employee.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500/20 hover:border-blue-primary/50">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{employee.name}</h3>
+                            <h3 className="font-semibold text-gray-500">{employee.name}</h3>
                             <Badge variant={getRoleColor(employee.role)} className="flex items-center gap-1">
                               {getRoleIcon(employee.role)}
                               {employee.role}
                             </Badge>
                             {employee.isActive ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">
+                              <Badge variant="outline" className="text-green-400 border-green-400">
                                 <UserCheck className="w-3 h-3 mr-1" />
                                 Active
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-red-600 border-red-600">
+                              <Badge variant="outline" className="text-red-400 border-red-400">
                                 <UserX className="w-3 h-3 mr-1" />
                                 Inactive
                               </Badge>
                             )}
                           </div>
-                          <div className="space-y-1 text-sm text-muted-foreground">
+                          <div className="space-y-1 text-sm text-gray-400 ">
                             {employee.email && (
                               <div className="flex items-center gap-2">
                                 <Mail className="w-3 h-3" />
@@ -313,7 +323,7 @@ export default function EmployeesManagement() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleStatus(employee)}
-                            className={employee.isActive ? 'text-orange-600' : 'text-green-600'}
+                            className={employee.isActive ? 'text-orange-400' : 'text-green-400'}
                           >
                             {employee.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                           </Button>
@@ -321,6 +331,7 @@ export default function EmployeesManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(employee)}
+                            className="text-gray-500 hover:text-white hover:bg-amber-600"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -328,7 +339,7 @@ export default function EmployeesManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(employee.id, employee.name)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-gray-400 hover:text-white hover:bg-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -345,9 +356,9 @@ export default function EmployeesManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-gray-500">
               {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
             </DialogTitle>
             <DialogDescription>
@@ -357,44 +368,47 @@ export default function EmployeesManagement() {
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name" className="text-gray-500">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="John Doe"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email" className="text-gray-500">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="john@example.com"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone" className="text-gray-500">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1 234 567 8900"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="role">Role *</Label>
+              <Label htmlFor="role" className="text-gray-500">Role *</Label>
               <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
-                <SelectTrigger>
+                <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-gray-800 border-blue-500/20">
                   <SelectItem value="cashier">Cashier</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
@@ -403,21 +417,22 @@ export default function EmployeesManagement() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="clerkId">Clerk ID</Label>
+              <Label htmlFor="clerkId" className="text-gray-500">Clerk ID</Label>
               <Input
                 id="clerkId"
                 value={formData.clerkId}
                 onChange={(e) => setFormData({ ...formData, clerkId: e.target.value })}
                 placeholder="Optional - for authentication"
+                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500/20">
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-blue-accent text-white">
               {editingEmployee ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Printer, X, MessageCircle, Mail, Download } from 'lucide-react'
+import { useSettings } from '@/lib/settings-context'
 
 interface ReceiptProps {
   open: boolean
@@ -14,6 +15,7 @@ interface ReceiptProps {
 }
 
 export default function ReceiptDialog({ open, onClose, sale }: ReceiptProps) {
+  const { formatCurrency } = useSettings()
   const printRef = useRef<HTMLDivElement>(null)
   const [whatsappNumber, setWhatsAppNumber] = useState('')
   const [emailTo, setEmailTo] = useState('')
@@ -64,11 +66,11 @@ export default function ReceiptDialog({ open, onClose, sale }: ReceiptProps) {
       `Invoice: ${sale.invoiceNumber}\n` +
       `Date: ${new Date(sale.createdAt).toLocaleString()}\n\n` +
       `${sale.items?.map((item: any) => 
-        `${item.quantity}x ${item.product?.name} - $${item.subtotal?.toFixed(2)}`
+        `${item.quantity}x ${item.product?.name} - ${formatCurrency(item.subtotal || 0)}`
       ).join('\n')}\n\n` +
-      `Subtotal: $${sale.subtotal?.toFixed(2)}\n` +
-      `GST (${store.gstRate || 10}%): $${sale.gst?.toFixed(2)}\n` +
-      `Total: $${sale.total?.toFixed(2)}\n` +
+      `Subtotal: ${formatCurrency(sale.subtotal || 0)}\n` +
+      `GST (${store.gstRate || 10}%): ${formatCurrency(sale.gst || 0)}\n` +
+      `Total: ${formatCurrency(sale.total || 0)}\n` +
       `Paid via ${sale.payment?.method}\n\n` +
       `Thank you for shopping!`
 
@@ -93,12 +95,12 @@ Invoice: ${sale.invoiceNumber}
 Date: ${new Date(sale.createdAt).toLocaleString()}
 
 ${sale.items?.map((item: any) => 
-  `${item.quantity}x ${item.product?.name} - $${item.subtotal?.toFixed(2)}`
+  `${item.quantity}x ${item.product?.name} - ${formatCurrency(item.subtotal || 0)}`
 ).join('\n')}
 
-Subtotal: $${sale.subtotal?.toFixed(2)}
-GST (${store.gstRate || 10}%): $${sale.gst?.toFixed(2)}
-Total: $${sale.total?.toFixed(2)}
+Subtotal: ${formatCurrency(sale.subtotal || 0)}
+GST (${store.gstRate || 10}%): ${formatCurrency(sale.gst || 0)}
+Total: ${formatCurrency(sale.total || 0)}
 
 Paid via ${sale.payment?.method}
 
@@ -123,15 +125,12 @@ Thank you for shopping!
       ['Item', 'Quantity', 'Price', 'Subtotal'],
       ...sale.items?.map((item: any) => [
         item.product?.name,
-        item.quantity,
-        `$${item.price?.toFixed(2)}`,
-        `$${item.subtotal?.toFixed(2)}`
-      ]),
+        item.quantity.toString(),
+        formatCurrency(item.price || 0),
+        formatCurrency(item.subtotal || 0)
+      ]) || [],
       [''],
-      ['Subtotal', `$${sale.subtotal?.toFixed(2)}`],
-      ['GST', `$${sale.gst?.toFixed(2)}`],
-      ['Total', `$${sale.total?.toFixed(2)}`],
-      ['Payment Method', sale.payment?.method]
+      ['Payment Method', sale.payment?.method || 'Cash']
     ].map(row => row.join(',')).join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -162,9 +161,9 @@ Thank you for shopping!
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-blue-500/20">
         <DialogHeader>
-          <DialogTitle>Receipt Options</DialogTitle>
+          <DialogTitle className="text-gray-500">Receipt Options</DialogTitle>
         </DialogHeader>
 
         {/* Receipt Preview */}
@@ -213,11 +212,11 @@ Thank you for shopping!
                 <div className="flex-1">
                   <p>{item.product?.name}</p>
                   <p className="text-gray-500">
-                    {item.quantity} x ${item.price?.toFixed(2)}
+                    {item.quantity} x {formatCurrency(item.price || 0)}
                   </p>
                 </div>
                 <div className="text-right">
-                  ${item.subtotal?.toFixed(2)}
+                  {formatCurrency(item.subtotal || 0)}
                 </div>
               </div>
             ))}
@@ -229,20 +228,20 @@ Thank you for shopping!
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
               <span>Subtotal</span>
-              <span>${sale.subtotal?.toFixed(2)}</span>
+              <span>{formatCurrency(sale.subtotal || 0)}</span>
             </div>
 
             {sale.gst > 0 && (
               <div className="flex justify-between text-xs">
                 <span>GST ({store.gstRate || 10}%)</span>
-                <span>${sale.gst?.toFixed(2)}</span>
+                <span>{formatCurrency(sale.gst || 0)}</span>
               </div>
             )}
 
             {sale.discount > 0 && (
               <div className="flex justify-between text-xs">
                 <span>Discount</span>
-                <span>-${sale.discount?.toFixed(2)}</span>
+                <span>-{formatCurrency(sale.discount || 0)}</span>
               </div>
             )}
 
@@ -250,7 +249,7 @@ Thank you for shopping!
 
             <div className="flex justify-between text-lg font-bold">
               <span>TOTAL</span>
-              <span>${sale.total?.toFixed(2)}</span>
+              <span>{formatCurrency(sale.total || 0)}</span>
             </div>
           </div>
 
@@ -273,15 +272,15 @@ Thank you for shopping!
         <div className="space-y-4">
           {/* WhatsApp */}
           <div className="space-y-2">
-            <Label>Share via WhatsApp</Label>
+            <Label className="text-gray-500">Share via WhatsApp</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="+91XXXXXXXXXX"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsAppNumber(e.target.value)}
-                className="flex-1"
+                className="flex-1 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
-              <Button onClick={handleWhatsAppShare} disabled={!whatsappNumber}>
+              <Button onClick={handleWhatsAppShare} disabled={!whatsappNumber} className="bg-amber-600 hover:bg-blue-accent text-white">
                 <MessageCircle className="w-4 h-4 mr-2" />
                 WhatsApp
               </Button>
@@ -290,16 +289,16 @@ Thank you for shopping!
 
           {/* Email */}
           <div className="space-y-2">
-            <Label>Share via Email</Label>
+            <Label className="text-gray-500">Share via Email</Label>
             <div className="flex gap-2">
               <Input
                 type="email"
                 placeholder="customer@example.com"
                 value={emailTo}
                 onChange={(e) => setEmailTo(e.target.value)}
-                className="flex-1"
+                className="flex-1 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
-              <Button onClick={handleEmailShare} disabled={!emailTo}>
+              <Button onClick={handleEmailShare} disabled={!emailTo} className="bg-amber-600 hover:bg-blue-accent text-white">
                 <Mail className="w-4 h-4 mr-2" />
                 Email
               </Button>
@@ -307,7 +306,7 @@ Thank you for shopping!
           </div>
 
           {/* Export CSV */}
-          <Button onClick={handleExportCSV} variant="outline" className="w-full">
+          <Button onClick={handleExportCSV} variant="outline" className="w-full border-blue-500/20">
             <Download className="w-4 h-4 mr-2" />
             Export Receipt as CSV
           </Button>
@@ -315,11 +314,11 @@ Thank you for shopping!
 
         {/* Actions */}
         <div className="flex gap-2 mt-4">
-          <Button variant="outline" className="flex-1" onClick={onClose}>
+          <Button variant="outline" className="flex-1 border-blue-500/20" onClick={onClose}>
             <X className="w-4 h-4 mr-2" />
             Close
           </Button>
-          <Button onClick={handlePrint} className="flex-1">
+          <Button onClick={handlePrint} className="flex-1 bg-amber-600 hover:bg-blue-accent text-white">
             <Printer className="w-4 h-4 mr-2" />
             Print
           </Button>
