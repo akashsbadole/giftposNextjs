@@ -1,0 +1,158 @@
+// This is your Prisma schema file for Retail Store POS System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Store configuration
+model Store {
+  id           String   @id @default(cuid())
+  name         String
+  address      String?
+  phone        String?
+  email        String?
+  taxRate      Float    @default(0)  // Legacy field, kept for compatibility
+  gstRate      Float    @default(0)  // GST percentage (e.g., 5, 10, 15)
+  currency     String   @default("USD")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  categories   Category[]
+  products     Product[]
+  customers    Customer[]
+  sales        Sale[]
+  employees    Employee[]
+}
+
+// Category for organizing products
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  color     String?
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products  Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Product inventory
+model Product {
+  id          String    @id @default(cuid())
+  sku         String    @unique
+  barcode     String?   @unique
+  name        String
+  description String?
+  price       Float
+  cost        Float     @default(0)
+  stock       Int       @default(0)
+  minStock    Int       @default(0)  // Low stock threshold
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  images      String?   // JSON array of image URLs
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  saleItems   SaleItem[]
+  stockLogs   StockLog[]
+}
+
+// Customer management
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  address   String?
+  points    Int      @default(0) // Loyalty points
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Employee/Staff
+model Employee {
+  id        String   @id @default(cuid())
+  clerkId   String?  @unique  // Clerk user ID for authentication
+  name      String
+  email     String   @unique
+  phone     String?
+  role      String   @default("staff") // admin, manager, staff
+  isActive  Boolean  @default(true)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Sales transaction
+model Sale {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique
+  subtotal      Float
+  tax           Float     @default(0)  // Legacy field
+  gst           Float     @default(0)  // GST amount
+  discount      Float     @default(0)
+  total         Float
+  paymentMethod String   // cash, card, digital
+  status        String    @default("completed") // pending, completed, cancelled, refunded
+  notes         String?
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  employeeId    String?
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+  items         SaleItem[]
+  payment       Payment?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Items in a sale
+model SaleItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  price     Float
+  subtotal  Float
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// Payment details
+model Payment {
+  id             String   @id @default(cuid())
+  saleId         String   @unique
+  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  amount         Float
+  method         String   // cash, card, digital
+  reference      String?  // Transaction ID, card last 4, etc.
+  status         String   @default("completed") // pending, completed, failed
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Stock movement logs
+model StockLog {
+  id          String   @id @default(cuid())
+  quantity    Int      // Positive for restock, negative for sale
+  type        String   // sale, restock, return, adjustment, damage
+  reason      String?
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  employeeId  String?  // Who made the change
+  createdAt   DateTime @default(now())
+}
