@@ -141,7 +141,7 @@ export default function Home() {
       )}
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 flex-1">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full mb-6 overflow-x-auto bg-gray-800/50 backdrop-blur-sm border border-blue-border rounded-xl p-1">
             <TabsTrigger value="pos" className="min-w-20 gap-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all text-gray-600">

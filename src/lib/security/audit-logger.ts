@@ -74,7 +74,7 @@ export class AuditLogger {
         console.warn('Auth not available for audit log:', error)
       }
       
-      const auditLog = await db.auditLog.create({
+      const auditLog = await db.AuditLog.create({
         data: {
           timestamp: entry.timestamp,
           userId: entry.userId || authState?.userId || undefined,
@@ -134,7 +134,7 @@ export class AuditLogger {
         console.warn('Auth not available for security event:', error)
       }
       
-      const securityEvent = await db.securityEvent.create({
+      const securityEvent = await db.SecurityEvent.create({
         data: {
           timestamp: event.timestamp,
           eventType: event.eventType,
@@ -329,7 +329,7 @@ export class AuditLogger {
       if (filters.endDate) where.timestamp.lte = filters.endDate
     }
 
-    return await db.auditLog.findMany({
+    return await db.AuditLog.findMany({
       where,
       orderBy: { timestamp: 'desc' },
       take: filters?.limit || 100,
@@ -373,7 +373,7 @@ export class AuditLogger {
       if (filters.endDate) where.timestamp.lte = filters.endDate
     }
 
-    return await db.securityEvent.findMany({
+    return await db.SecurityEvent.findMany({
       where,
       orderBy: { timestamp: 'desc' },
       take: filters?.limit || 100,

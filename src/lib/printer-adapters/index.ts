@@ -1,4 +1,8 @@
 // Printer Adapter Interface and Factory
+import * as ThermalAdapters from './thermal'
+import * as InkjetAdapters from './inkjet'
+import * as LabelAdapters from './label'
+
 export interface PrinterAdapter {
   name: string;
   brand: string;
@@ -62,35 +66,35 @@ export class PrinterAdapterFactory {
   }): PrinterAdapter {
     const { brand, model, type, connection } = printerConfig;
     
-    // Import specific adapters dynamically
+    // Use dynamic imports with proper ES6 imports
     if (type === 'thermal') {
       switch (brand.toLowerCase()) {
         case 'epson':
-          return new (require('./thermal').EpsonThermalAdapter)({ model, connection });
+          return new ThermalAdapters.EpsonThermalAdapter({ model, connection });
         case 'star':
-          return new (require('./thermal').StarThermalAdapter)({ model, connection });
+          return new ThermalAdapters.StarThermalAdapter({ model, connection });
         case 'tvs':
-          return new (require('./thermal').TVSThermalAdapter)({ model, connection });
+          return new ThermalAdapters.TVSThermalAdapter({ model, connection });
         default:
-          return new (require('./thermal').GenericThermalAdapter)({ brand, model, connection });
+          return new ThermalAdapters.GenericThermalAdapter({ brand, model, connection });
       }
     }
     
     if (type === 'inkjet') {
       switch (brand.toLowerCase()) {
         case 'hp':
-          return new (require('./inkjet').HPInkjetAdapter)({ model, connection });
+          return new InkjetAdapters.HPInkjetAdapter({ model, connection });
         case 'canon':
-          return new (require('./inkjet').CanonInkjetAdapter)({ model, connection });
+          return new InkjetAdapters.CanonInkjetAdapter({ model, connection });
         case 'epson':
-          return new (require('./inkjet').EpsonInkjetAdapter)({ model, connection });
+          return new InkjetAdapters.EpsonInkjetAdapter({ model, connection });
         default:
-          return new (require('./inkjet').GenericInkjetAdapter)({ brand, model, connection });
+          return new InkjetAdapters.GenericInkjetAdapter({ brand, model, connection });
       }
     }
     
     if (type === 'label') {
-      return new (require('./label').GenericLabelAdapter)({ brand, model, connection });
+      return new LabelAdapters.GenericLabelAdapter({ brand, model, connection });
     }
     
     throw new Error(`Unsupported printer type: ${type}`);

@@ -148,6 +148,72 @@ model Payment {
   updatedAt      DateTime @updatedAt
 }
 
+// Performance Metrics for monitoring
+model PerformanceMetric {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  operation     String   // API endpoint, DB operation, etc.
+  duration      Float    // Duration in milliseconds
+  memoryUsage   Float?   // Memory used in bytes
+  cpuUsage      Float?   // CPU time in microseconds
+  success       Boolean
+  errorMessage  String?
+  metadata      String?  // JSON additional data
+  userId        String?
+  sessionId     String?
+  route         String?
+  method        String?
+  createdAt     DateTime @default(now())
+  
+  @@index([operation, timestamp])
+  @@index([duration])
+  @@index([success])
+  @@index([userId])
+}
+
+// Error Aggregation for deduplication
+model ErrorAggregate {
+  id            String   @id @default(cuid())
+  fingerprint   String   @unique // Unique identifier for error type
+  message       String
+  type          String
+  count         Int      @default(1)
+  firstOccurrence DateTime @default(now())
+  lastOccurrence  DateTime @default(now())
+  resolved      Boolean  @default(false)
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  userImpact    String?  // low, medium, high, critical
+  affectedUsers String?  // JSON array of affected user IDs
+  tags          String?  // JSON array of tags
+  context       String?  // JSON error context
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([fingerprint])
+  @@index([resolved])
+  @@index([lastOccurrence])
+}
+
+// System Health Monitoring
+model SystemHealth {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  status        String   // healthy, degraded, critical
+  memoryUsage   Float    // Memory usage in MB
+  cpuUsage      Float    // CPU usage percentage
+  diskUsage     Float?   // Disk usage percentage
+  activeConnections Int
+  responseTime  Float    // Average response time in ms
+  errorRate     Float    // Error rate percentage
+  uptime        Float    // System uptime in seconds
+  version       String?  // Application version
+  createdAt     DateTime @default(now())
+  
+  @@index([timestamp])
+  @@index([status])
+}
+
 // Stock movement logs
 model StockLog {
   id          String   @id @default(cuid())
@@ -323,5 +389,87 @@ model ErrorLog {
   stackTrace     String?
   isSensitive    Boolean  @default(false)
   tags           String?  // JSON array of tags
+  fingerprint    String?  // For error deduplication
+  errorCode      String?  // Custom error code
+  userImpact     String?  // low, medium, high, critical
+  retryable      Boolean? // Whether error can be retried
+  resolved       Boolean  @default(false)
+  resolvedAt     DateTime?
+  resolvedBy     String?
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([level, type, timestamp])
+  @@index([fingerprint])
+  @@index([correlationId])
+  @@index([userId])
+  @@index([resolved])
+}
+
+// Support Ticket System
+model SupportTicket {
+  id            String   @id @default(cuid())
+  ticketId      String   @unique @default(cuid()) // Human-readable ticket ID
+  userId        String?  // Clerk user ID
+  userEmail     String?  // User's email
+  userName      String?
+  title         String
+  description   String
+  category      String   // Technical Issue, Billing, Feature Request, General Question
+  priority      String   @default("medium") // low, medium, high, critical
+  status        String   @default("open") // open, in_progress, resolved, closed
+  attachments   String?  // JSON array of attachment URLs
+  systemInfo    String?  // JSON system information
+  resolution    String?  // Resolution notes
+  resolvedBy    String?  // Staff member who resolved it
+  resolvedAt    DateTime?
+  customerId    String?  // Optional link to customer
+  storeId       String?  // Store ID if applicable
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Knowledge Base Articles
+model KnowledgeBaseArticle {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   // HTML or Markdown content
+  summary     String?  // Short description for search results
+  category    String   // FAQ, Getting Started, Troubleshooting, Keyboard Shortcuts, etc.
+  tags        String?  // JSON array of tags
+  isPublished Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  viewCount   Int      @default(0)
+  helpful     Int      @default(0) // Count of helpful votes
+  notHelpful  Int      @default(0) // Count of not helpful votes
+  author      String?  // Author name
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Error Reports
+model ErrorReport {
+  id            String   @id @default(cuid())
+  reportId      String   @unique @default(cuid()) // Human-readable report ID
+  userId        String?  // Clerk user ID
+  userEmail     String?
+  title         String
+  description   String
+  errorType     String   // JavaScript Error, Network Error, UI Bug, Performance Issue
+  severity      String   @default("medium") // low, medium, high, critical
+  url           String?  // Page where error occurred
+  userAgent     String?
+  browser       String?
+  os            String?
+  screenshot    String?  // Screenshot data URL
+  stackTrace    String?  // JavaScript stack trace
+  consoleLogs   String?  // Console logs
+  systemInfo    String?  // JSON system information
+  status        String   @default("new") // new, investigating, resolved, dismissed
+  resolvedBy    String?
+  resolvedAt    DateTime?
+  resolution    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

@@ -748,7 +748,7 @@ Thank you for your business!
     <div className="space-y-4">
       {/* Store Header */}
       {store && (
-        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500/20 shadow-md">
+        <Card className=" bg-gray-900 border-blue-500 shadow-md">
           <CardContent className="p-6">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-400">{store.name}</h1>
@@ -774,11 +774,11 @@ Thank you for your business!
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+      <div className="grid lg:grid-cols-3 gap-6 min-h-screen">
         {/* Products Section */}
         <div className="lg:col-span-2 flex flex-col gap-4">
         {/* Search and Filter Bar */}
-        <Card className="bg-gray-900 border-blue-500/20 shadow-sm">
+        <Card className="bg-gray-900 border-blue-500 shadow-sm">
           <CardContent className="p-4">
             <div className="flex gap-3">
               <div className="relative flex-1">
@@ -939,7 +939,7 @@ Thank you for your business!
                           >
                             {product.category.name}
                           </Badge>
-                          <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-gray-900 transition-colors text-white hover:text-red">{product.name}</h3>
+                          <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-amber-500 transition-colors text-white">{product.name}</h3>
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-bold text-white">{formatCurrency(product.price)}</span>
                             <Badge variant={product.stock <= (product.minStock || store?.globalMinStock || 5) ? 'destructive' : 'secondary'}>
@@ -960,7 +960,7 @@ Thank you for your business!
 
         {/* Cart Section */}
         <div className="flex flex-col gap-4">
-        <Card className="flex flex-col h-full bg-linear-to-br from-gray-900 to-blue-900/20 border-blue-500/20 shadow-md">
+        <Card className="flex flex-col h-full bg-gray-900 shadow-md">
           <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
             <div className="flex items-center justify-between">
               <div>

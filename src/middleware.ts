@@ -96,6 +96,31 @@ function getClientIP(req: Request): string {
     return 'unknown'
 }
 
+// Whitelist patterns for legitimate requests that should not be flagged
+const whitelistedPatterns = [
+    /\.well-known\/appspecific\/com\.chrome\.devtools\.json/i,
+    /\.well-known\/apple-developer-domain-association/i,
+    /_next\/static\//i,
+    /_next\/image/i,
+    /favicon\./i,
+    /manifest\.json$/i,
+    /robots\.txt$/i,
+    /sitemap\.xml$/i
+]
+
+// Development environment detection
+function isDevelopmentEnvironment(req: Request, clientIP: string): boolean {
+    const hostname = req.headers.get('host') || ''
+    return (
+        hostname.includes('localhost') ||
+        hostname.includes('127.0.0.1') ||
+        hostname.includes('::1') ||
+        clientIP === '::1' ||
+        clientIP === '127.0.0.1' ||
+        process.env.NODE_ENV === 'development'
+    )
+}
+
 // Detect suspicious activity
 function detectSuspiciousActivity(req: Request, userAgent: string): boolean {
     const suspiciousPatterns = [
@@ -122,6 +147,12 @@ function detectSuspiciousActivity(req: Request, userAgent: string): boolean {
     return suspiciousPatterns.some(pattern => pattern.test(combinedString))
 }
 
+// Check if request should be whitelisted from suspicious activity detection
+function isWhitelistedRequest(req: Request): boolean {
+    const url = req.url.toLowerCase()
+    return whitelistedPatterns.some(pattern => pattern.test(url))
+}
+
 export default clerkMiddleware(async (auth, req) => {
     console.log('🔐 Middleware: Request to', req.nextUrl.pathname)
     
@@ -130,29 +161,61 @@ export default clerkMiddleware(async (auth, req) => {
     const clientIP = getClientIP(req)
     const userAgent = req.headers.get('user-agent') || 'unknown'
     
-    // Detect suspicious activity
-    if (detectSuspiciousActivity(req, userAgent)) {
-        console.warn('🚨 Middleware: Suspicious activity detected', {
+    // Check if request should be whitelisted from suspicious activity detection
+    const isWhitelisted = isWhitelistedRequest(req)
+    
+    // Skip suspicious activity detection for whitelisted requests
+    if (!isWhitelisted) {
+        // Detect suspicious activity (disabled in development mode)
+        if (detectSuspiciousActivity(req, userAgent)) {
+            // Check if we're in development mode
+            if (isDevelopmentEnvironment(req, clientIP)) {
+                console.log('🛠️ Middleware: Development mode - Suspicious activity detected but ignored', {
+                    correlationId,
+                    ip: clientIP,
+                    userAgent,
+                    path: req.nextUrl.pathname
+                })
+                // In development mode, allow the request but log the suspicious activity
+            } else {
+                console.warn('🚨 Middleware: Suspicious activity detected', {
+                    correlationId,
+                    ip: clientIP,
+                    userAgent,
+                    path: req.nextUrl.pathname
+                })
+                
+                return new Response(
+                    JSON.stringify({ error: { code: 'SUSPICIOUS_ACTIVITY', message: 'Request blocked' } }),
+                    {
+                        status: 403,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Correlation-ID': correlationId,
+                            'X-Content-Type-Options': 'nosniff',
+                            'X-Frame-Options': 'DENY',
+                            'X-XSS-Protection': '1; mode=block',
+                            'Referrer-Policy': 'strict-origin-when-cross-origin'
+                        }
+                    }
+                )
+            }
+        } else {
+            // No suspicious activity detected
+            if (isDevelopmentEnvironment(req, clientIP)) {
+                console.log('🛠️ Middleware: Development mode - Suspicious activity check passed', {
+                    correlationId,
+                    ip: clientIP,
+                    path: req.nextUrl.pathname
+                })
+            }
+        }
+    } else {
+        console.log('✅ Middleware: Whitelisted request, skipping suspicious activity check', {
             correlationId,
             ip: clientIP,
-            userAgent,
             path: req.nextUrl.pathname
         })
-        
-        return new Response(
-            JSON.stringify({ error: { code: 'SUSPICIOUS_ACTIVITY', message: 'Request blocked' } }),
-            {
-                status: 403,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Correlation-ID': correlationId,
-                    'X-Content-Type-Options': 'nosniff',
-                    'X-Frame-Options': 'DENY',
-                    'X-XSS-Protection': '1; mode=block',
-                    'Referrer-Policy': 'strict-origin-when-cross-origin'
-                }
-            }
-        )
     }
     
     // Apply rate limiting
@@ -304,30 +367,46 @@ export default clerkMiddleware(async (auth, req) => {
                 const csrfToken = req.headers.get('x-csrf-token')
                 const sessionCSRF = sessionClaimsObj?.csrfToken
                 
-                if (!csrfToken || !validateCSRFToken(csrfToken, sessionCSRF)) {
-                    console.warn('CSRF token validation failed:', {
+                // Skip CSRF validation in development mode or for specific endpoints
+                const isDevelopmentMode = isDevelopmentEnvironment(req, clientIP)
+                const shouldSkipCSRF = isDevelopmentMode || req.nextUrl.pathname.includes('/api/pos/logs')
+                
+                if (!shouldSkipCSRF) {
+                    if (!csrfToken || !sessionCSRF || !validateCSRFToken(csrfToken, sessionCSRF)) {
+                        console.warn('CSRF token validation failed:', {
+                            userId,
+                            userEmail: email,
+                            path: req.nextUrl.pathname,
+                            method: req.method,
+                            ip: clientIP,
+                            userAgent,
+                            hasCSRFToken: !!csrfToken,
+                            hasSessionCSRF: !!sessionCSRF
+                        })
+                        
+                        return new Response(
+                            JSON.stringify({ error: { code: 'CSRF_TOKEN_INVALID', message: 'Invalid CSRF token' } }),
+                            {
+                                status: 403,
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Correlation-ID': correlationId,
+                                    'X-Content-Type-Options': 'nosniff',
+                                    'X-Frame-Options': 'DENY',
+                                    'X-XSS-Protection': '1; mode=block',
+                                    'Referrer-Policy': 'strict-origin-when-cross-origin'
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    console.log('🛡️ Middleware: CSRF validation skipped (development mode or exempt endpoint)', {
                         userId,
-                        userEmail: email,
                         path: req.nextUrl.pathname,
                         method: req.method,
-                        ip: clientIP,
-                        userAgent
+                        isDevelopmentMode,
+                        hasCSRFToken: !!csrfToken
                     })
-                    
-                    return new Response(
-                        JSON.stringify({ error: { code: 'CSRF_TOKEN_INVALID', message: 'Invalid CSRF token' } }),
-                        {
-                            status: 403,
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-Correlation-ID': correlationId,
-                                'X-Content-Type-Options': 'nosniff',
-                                'X-Frame-Options': 'DENY',
-                                'X-XSS-Protection': '1; mode=block',
-                                'Referrer-Policy': 'strict-origin-when-cross-origin'
-                            }
-                        }
-                    )
                 }
             }
             

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider } from '@clerk/nextjs'
-import { SettingsProvider } from "@/lib/settings-context"
+import { ClientLayout } from "@/components/layout/ClientLayout"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +19,8 @@ export const metadata: Metadata = {
   description: "Point of Sale System for retail stores",
 };
 
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,12 +30,11 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
         >
-          <SettingsProvider>
+          <ClientLayout>
             {children}
-            <Toaster />
-          </SettingsProvider>
+          </ClientLayout>
         </body>
       </html>
     </ClerkProvider>
