@@ -272,7 +272,7 @@ export default function SalesReport() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-150">
-        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
           <p className="text-gray-300 font-medium">Loading sales data...</p>
         </div>
@@ -295,7 +295,7 @@ export default function SalesReport() {
     prefix?: string
     suffix?: string
   }) => (
-    <Card className="bg-gray-800 border-blue-500/20 shadow-md hover:shadow-lg transition-shadow">
+    <Card className="bg-gray-800 border-blue-500 shadow-md hover:shadow-lg transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -329,7 +329,7 @@ export default function SalesReport() {
     <div className="space-y-6">
       {/* Store Header */}
       {store && (
-        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500/20 shadow-lg">
+        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500 shadow-lg">
           <CardContent className="p-6">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -339,7 +339,7 @@ export default function SalesReport() {
               {store.address && <p className="text-gray-300">{store.address}</p>}
               {store.phone && <p className="text-gray-300">Tel: {store.phone}</p>}
               {store.email && <p className="text-gray-300">{store.email}</p>}
-              <div className="mt-4 pt-4 border-t border-blue-500/20">
+              <div className="mt-4 pt-4 border-t border-blue-500">
                 <h2 className="text-lg font-semibold text-gray-500">Sales Report</h2>
                 {store.showGST && (
                   <p className="text-sm text-gray-400  mt-1">
@@ -353,7 +353,7 @@ export default function SalesReport() {
       )}
 
       {/* Date Filter Controls */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <CardTitle className="flex items-center gap-2 text-gray-500">
             <Filter className="w-5 h-5" />
@@ -364,11 +364,11 @@ export default function SalesReport() {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
-              <SelectTrigger className="w-50 border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+              <SelectTrigger className="w-50 border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                 <Calendar className="w-4 h-4 mr-2 text-gray-500" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-blue-500/20">
+              <SelectContent className="bg-gray-400 border-amber-500">
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="week">Last 7 days</SelectItem>
                 <SelectItem value="month">Last 30 days</SelectItem>
@@ -385,14 +385,14 @@ export default function SalesReport() {
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
                   placeholder="Start date"
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
                 <Input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
                   placeholder="End date"
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
             )}
@@ -444,14 +444,14 @@ export default function SalesReport() {
       )}
 
       <Tabs defaultValue="sales" className="w-full">
-        <TabsList className="bg-gray-800 border border-blue-500/20 rounded-lg p-1">
+        <TabsList className="bg-gray-800 border border-blue-500 rounded-lg p-1">
           <TabsTrigger value="sales" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded-md">Sales History</TabsTrigger>
           <TabsTrigger value="products" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded-md">Top Products</TabsTrigger>
           <TabsTrigger value="payment" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded-md">Payment Methods</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales" className="space-y-4">
-          <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+          <Card className="bg-gray-900 border-blue-500 shadow-md">
             <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
               <CardTitle className="text-gray-500">Recent Sales</CardTitle>
               <CardDescription>
@@ -474,7 +474,7 @@ export default function SalesReport() {
                     {filteredSales.map((sale) => (
                       <Card
                         key={sale.id}
-                        className="hover:shadow-lg transition-all cursor-pointer bg-gray-800 border-blue-500/20 hover:border-blue-primary/50"
+                        className="hover:shadow-lg transition-all cursor-pointer bg-gray-800 border-blue-500 hover:border-blue-primary/50"
                         onClick={() => setSelectedSale(sale)}
                       >
                         <CardContent className="p-4">
@@ -533,7 +533,7 @@ export default function SalesReport() {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-4">
-          <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+          <Card className="bg-gray-900 border-blue-500 shadow-md">
             <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
               <CardTitle className="text-gray-500">Top Products</CardTitle>
               <CardDescription>Best selling products by quantity and revenue</CardDescription>
@@ -548,7 +548,7 @@ export default function SalesReport() {
                 ) : (
                   <div className="space-y-3">
                     {stats.topProducts.map((product, index) => (
-                      <Card key={index} className="bg-gray-800 border-blue-500/20 hover:shadow-md transition-shadow">
+                      <Card key={index} className="bg-gray-800 border-blue-500 hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
@@ -573,7 +573,7 @@ export default function SalesReport() {
         </TabsContent>
 
         <TabsContent value="payment" className="space-y-4">
-          <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+          <Card className="bg-gray-900 border-blue-500 shadow-md">
             <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
               <CardTitle className="text-gray-500">Payment Methods</CardTitle>
               <CardDescription>Breakdown of sales by payment method</CardDescription>
@@ -588,7 +588,7 @@ export default function SalesReport() {
                 ) : (
                   <div className="space-y-3">
                     {stats.salesByPayment.map((payment, index) => (
-                      <Card key={index} className="bg-gray-800 border-blue-500/20 hover:shadow-md transition-shadow">
+                      <Card key={index} className="bg-gray-800 border-blue-500 hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
@@ -619,7 +619,7 @@ export default function SalesReport() {
           open={!!selectedSale}
           onOpenChange={() => setSelectedSale(null)}
         >
-          <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
+          <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500">
             <DialogHeader>
               <DialogTitle className="text-gray-500">Receipt Details</DialogTitle>
               <DialogDescription>Invoice #{selectedSale.invoiceNumber}</DialogDescription>
@@ -679,7 +679,7 @@ export default function SalesReport() {
                     <span className="font-medium text-gray-500">-{formatCurrency(selectedSale.discount)}</span>
                   </div>
                 )}
-                <Separator className="border-blue-500/20" />
+                <Separator className="border-blue-500" />
                 <div className="flex justify-between font-bold text-gray-500">
                   <span>Total</span>
                   <span>{formatCurrency(selectedSale.total)}</span>

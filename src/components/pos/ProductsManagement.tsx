@@ -410,7 +410,7 @@ export default function ProductsManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-150">
-        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
           <p className="text-gray-300 font-medium">Loading products...</p>
         </div>
@@ -422,7 +422,7 @@ export default function ProductsManagement() {
     <div className="space-y-6">
       {/* Store Header */}
       {store && (
-        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500/20 shadow-md">
+        <Card className="bg-linear-to-r from-gray-900 to-blue-900/20 border-blue-500 shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Store className="w-5 h-5 text-gray-500" />
@@ -450,7 +450,7 @@ export default function ProductsManagement() {
       )}
 
       {/* Products List */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -467,7 +467,7 @@ export default function ProductsManagement() {
               <Button 
                 variant="outline" 
                 onClick={() => setImportDialogOpen(true)}
-                className="border-blue-500/20 text-gray-500 hover:bg-amber-600"
+                className="border-blue-500 text-gray-500 hover:bg-amber-600"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Import CSV
@@ -475,7 +475,7 @@ export default function ProductsManagement() {
               <Button 
                 variant="outline" 
                 onClick={handleExportCSV}
-                className="border-blue-500/20 text-gray-500 hover:bg-amber-600"
+                className="border-blue-500 text-gray-500 hover:bg-amber-600"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
@@ -491,7 +491,7 @@ export default function ProductsManagement() {
                 placeholder="Search products, SKU, or barcode..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="pl-10 border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
@@ -505,7 +505,7 @@ export default function ProductsManagement() {
                 </div>
               ) : (
                 filteredProducts.map((product) => (
-                  <Card key={product.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500/20 hover:border-blue-primary/50">
+                  <Card key={product.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500 hover:border-blue-primary/50">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -561,7 +561,7 @@ export default function ProductsManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500">
           <DialogHeader>
             <DialogTitle className="text-gray-500">
               {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -578,7 +578,7 @@ export default function ProductsManagement() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
@@ -589,7 +589,7 @@ export default function ProductsManagement() {
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <div className="grid gap-2">
@@ -612,14 +612,14 @@ export default function ProductsManagement() {
                         }
                       }}
                       placeholder="Scan or enter barcode..."
-                      className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                      className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={toggleCamera}
-                      className={`border-blue-500/20 hover:bg-amber-600 ${
+                      className={`border-blue-500 hover:bg-amber-600 ${
                         isCameraActive ? 'text-red-400 border-red-400/50' : 'text-gray-500'
                       }`}
                       title={isCameraActive ? 'Stop camera scanning' : 'Start camera scanning'}
@@ -677,10 +677,10 @@ export default function ProductsManagement() {
                 value={formData.categoryId}
                 onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
               >
-                <SelectTrigger id="category" className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                <SelectTrigger id="category" className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-blue-500/20">
+                <SelectContent className="bg-gray-400 border-amber-500">
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -699,7 +699,7 @@ export default function ProductsManagement() {
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <div className="grid gap-2">
@@ -710,7 +710,7 @@ export default function ProductsManagement() {
                   step="0.01"
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
             </div>
@@ -723,7 +723,7 @@ export default function ProductsManagement() {
                   type="number"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <div className="grid gap-2">
@@ -733,7 +733,7 @@ export default function ProductsManagement() {
                   type="number"
                   value={formData.minStock}
                   onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
             </div>
@@ -745,13 +745,13 @@ export default function ProductsManagement() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500/20">
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500">
               Cancel
             </Button>
             <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-blue-accent text-white">
@@ -763,7 +763,7 @@ export default function ProductsManagement() {
 
       {/* Import CSV Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500">
           <DialogHeader>
             <DialogTitle className="text-gray-500">Import Products from CSV</DialogTitle>
             <DialogDescription>
@@ -772,7 +772,7 @@ export default function ProductsManagement() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="border-2 border-dashed border-blue-500/20 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-blue-500 rounded-lg p-6 text-center">
               <Upload className="w-12 h-12 mx-auto mb-4 text-gray-500/50" />
               <p className="text-gray-500/70 mb-2">Click to upload CSV file</p>
               <input
@@ -788,7 +788,7 @@ export default function ProductsManagement() {
               <Button 
                 variant="outline" 
                 onClick={() => document.getElementById('csv-upload')?.click()}
-                className="border-blue-500/20 text-gray-500 hover:bg-amber-600"
+                className="border-blue-500 text-gray-500 hover:bg-amber-600"
               >
                 Select CSV File
               </Button>
@@ -801,7 +801,7 @@ export default function ProductsManagement() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)} className="border-blue-500/20">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)} className="border-blue-500">
               Cancel
             </Button>
           </DialogFooter>

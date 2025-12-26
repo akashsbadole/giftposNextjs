@@ -2,9 +2,57 @@
 
 A comprehensive Point of Sale (POS) application for retail stores including liquor stores, gift shops, garment stores, and general retail businesses.
 
+## Screenshot
+![Retail-POS-System-customer](screenshots\Retail-POS-System-customer.png "Retail-POS-System-customer")
+![Retail-POS-System-employee](screenshots\Retail-POS-System-employee.png "Retail-POS-System-employee")
+![Retail-POS-System-homepage](screenshots\Retail-POS-System-homepage.png "Retail-POS-System-homepage")
+![Retail-POS-System-products](screenshots\Retail-POS-System-products.png "Retail-POS-System-products")
+![Retail-POS-System-reports](screenshots\Retail-POS-System-reports.png "Retail-POS-System-reports")
+![Retail-POS-System-settings](screenshots\Retail-POS-System-settings.png "Retail-POS-System-settings")
+
+## ⚠️ Development Status
+
+**Current Version:** 0.1.0 (Development)
+
+This POS system is currently in active development. While core functionality is working, several advanced features are incomplete or have known issues:
+
+- **Held Orders System**: API endpoints exist but have dependency issues and are not fully functional
+- **Multi-user Collaboration**: Framework exists but implementation is incomplete
+- **Advanced Order Management**: State machine logic is not yet implemented
+- **Performance Optimization**: Background job system is planned but not yet active
+
+For production use, please test all features thoroughly before deployment.
+
+## 🗺️ Development Roadmap
+
+### Current Status (v0.1.0)
+- **Core POS**: Fully functional ✅
+- **Product/Customer Management**: Fully functional ✅
+- **Authentication**: Fully functional ✅
+- **Basic Reporting**: Functional ✅
+
+### Planned Improvements (v0.2.0 - v0.3.0)
+- **Cash Management System**: Shift tracking, cash drawer reconciliation
+- **Transaction Holding**: Park and retrieve sales for queue management
+- **Multi-tax Support**: VAT, regional tax rates beyond GST
+- **Enhanced Reporting**: End-of-day reports, shift analytics
+
+### Future Features (v1.0.0)
+- **Product Variants**: Size, color, material variants
+- **Offline Mode**: Local transaction queuing and sync
+- **Advanced Analytics**: Sales forecasting, inventory optimization
+- **API Integration**: Third-party accounting software integration
+- **Multi-location Support**: Multiple store management
+
+### Feature Priority
+1. **High Priority**: Cash management, transaction holding
+2. **Medium Priority**: Multi-tax support, enhanced reporting
+3. **Low Priority**: Product variants, offline mode
+
+
 ## Features
 
-### Core POS Functionality
+### Core POS Functionality ✅ Working
 - **Product Catalog**: Browse and search products by name, SKU, or barcode
 - **Category Filtering**: Filter products by categories
 - **Shopping Cart**: Add items with quantity management
@@ -14,6 +62,12 @@ A comprehensive Point of Sale (POS) application for retail stores including liqu
 - **Receipt Generation**: View detailed sale receipts
 - **Receipt Sharing**: Share via WhatsApp, Email, CSV export, or print
 - **Mobile Optimized**: Touch-friendly interface for tablets and phones
+
+### Advanced POS Features ⚠️ In Development
+- **Held Orders**: Cannot pause/retrieve transactions (dependency issues)
+- **Multi-user Collaboration**: Framework exists but implementation incomplete
+- **Order State Management**: Advanced state machine logic not implemented
+- **Background Job Processing**: Planned but not currently active
 
 ### Product Management
 - Full CRUD operations for products
@@ -59,26 +113,44 @@ A comprehensive Point of Sale (POS) application for retail stores including liqu
 ## Technology Stack
 
 - **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript 5
+- **Language**: TypeScript 5.x
 - **Database**: SQLite with Prisma ORM
 - **UI Components**: shadcn/ui
-- **Styling**: Tailwind CSS 4
+- **Styling**: Tailwind CSS 3.x/4.x (check package.json for exact version)
 - **Icons**: Lucide React
+- **Authentication**: Clerk
+- **Build Tool**: Next.js built-in (Webpack/Turbopack)
+
+> **Note**: This project uses a mix of dependencies. Check `package.json` for exact versions. Some features may require specific dependency versions.
 
 ## Getting Started
 
 ### 1. Authentication Setup (Required)
 
-**IMPORTANT**: The system now requires Clerk authentication.
+**IMPORTANT**: The system requires Clerk authentication for all users.
 
-1. Visit the application URL - you'll be redirected to sign-in
-2. **First User**: Create account → Automatically becomes Administrator
-3. **Additional Users**: Create accounts → Become Staff (max 3 total)
-4. Configure Clerk API keys in `.env`:
+1. **Create Clerk Account**: Sign up at [clerk.com](https://clerk.com) and get your API keys
+2. **Configure Environment**: Add Clerk keys to your `.env` file:
    ```env
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
    CLERK_SECRET_KEY=sk_test_xxxxx
+   # Session duration (optional - defaults to reasonable POS session length)
+   NEXT_PUBLIC_CLERK_SESSION_DURATION=1296000
    ```
+3. **First Login**: 
+   - Visit the application URL
+   - Create your account through Clerk sign-up
+   - First user automatically becomes Administrator
+4. **Additional Users**:
+   - Subsequent users become Staff members
+   - Maximum 3 employees enforced by the system
+   - Admin can change roles through the Employees section
+
+> **💡 Authentication Notes**: 
+> - Clerk handles all authentication security
+> - Sessions persist across browser restarts (configurable duration)
+> - See `CLERK_SESSION_CONFIG.md` for detailed session management options
+> - All API endpoints require valid Clerk authentication
 
 ### 2. Database Setup
 
@@ -95,9 +167,9 @@ The database schema is already set up. Initialize it with sample data:
 3. Set **GST Rate** (e.g., 10 for 10%)
 4. Configure other settings as needed
 
-### 4. Using the POS System
+### 4. Core Features Guide
 
-#### Making a Sale
+#### ✅ Making a Sale (Fully Working)
 1. **Sign In**: Authenticate with Clerk credentials
 2. Navigate to the **POS** tab
 3. Search for products by name, SKU, or barcode
@@ -107,34 +179,37 @@ The database schema is already set up. Initialize it with sample data:
 7. Click **Checkout** and select payment method
 8. For cash payments, enter the tender amount
 9. Complete the payment to finalize the sale
-10. **NEW**: Share receipt via WhatsApp, Email, CSV, or print
+10. Share receipt via WhatsApp, Email, CSV, or print
 
-#### Managing Products
+#### ✅ Managing Products (Fully Working)
 1. Navigate to the **Products** tab
 2. Click **Add Product** to create new products
 3. Fill in product details (name, SKU, price, stock, category)
 4. Click **Create** to save
 5. Edit or delete products using the action buttons
+6. **CSV Import/Export**: Use import/export buttons for bulk operations
 
-#### Managing Customers
+#### ✅ Managing Customers (Fully Working)
 1. Navigate to the **Customers** tab
-2. Click **Add Customer** to create new customers(optional)
+2. Click **Add Customer** to create new customers
 3. Fill in customer information
 4. Save to add to database
+5. View customer purchase history and loyalty points
 
-#### Viewing Reports
+#### ✅ Viewing Reports (Fully Working)
 1. Navigate to the **Reports** tab
 2. View sales history, top products, and payment breakdowns
 3. Click on sales to view detailed receipts
+4. View sales statistics and analytics
 
-#### Configuring Store Settings
+#### ✅ Configuring Store Settings (Fully Working)
 1. Navigate to the **Settings** tab
 2. Update store information (name, address, contact)
 3. Configure **GST Rate** (e.g., 10 for 10%)
 4. Set currency and other preferences
 5. Save changes to apply
 
-#### Managing Employees (Admin Only)
+#### ✅ Managing Employees (Fully Working)
 1. Navigate to the **Settings** tab
 2. Click **Employees** section
 3. Add new employees with appropriate roles:
@@ -142,6 +217,18 @@ The database schema is already set up. Initialize it with sample data:
    - **Manager**: Store settings and reports
    - **Staff**: POS operations only
 4. Maximum 3 employees enforced automatically
+
+### ⚠️ Advanced Features (Use with Caution)
+
+#### Held Orders (Not Currently Functional)
+- **Status**: API endpoints exist but have dependency issues
+- **Impact**: Cannot pause or retrieve transactions during busy periods
+- **Workaround**: Complete transactions immediately or use external notes
+
+#### Multi-user Collaboration (Incomplete)
+- **Status**: Framework exists but not fully implemented
+- **Impact**: Limited real-time collaboration between staff members
+- **Workaround**: Use separate devices or coordinate manually
 
 #### Using New Receipt Sharing Features
 **WhatsApp Sharing:**
@@ -189,45 +276,79 @@ The database schema is already set up. Initialize it with sample data:
 
 ## API Endpoints
 
-### Products
+### Products ✅ Working
 - `GET /api/pos/products` - List all products
 - `POST /api/pos/products` - Create new product
 - `PUT /api/pos/products/[id]` - Update product
 - `DELETE /api/pos/products/[id]` - Delete product
 
-### Categories
+### Categories ✅ Working
 - `GET /api/pos/categories` - List all categories
 - `POST /api/pos/categories` - Create new category
 
-### Customers
+### Customers ✅ Working
 - `GET /api/pos/customers` - List all customers
 - `POST /api/pos/customers` - Create new customer
 - `PUT /api/pos/customers/[id]` - Update customer
 - `DELETE /api/pos/customers/[id]` - Delete customer
+- `GET /api/pos/customers/[id]/purchases` - Get customer purchase history
 
-### Sales
+### Sales ✅ Working
 - `GET /api/pos/sales` - List all sales
 - `POST /api/pos/sales` - Create new sale
 - `GET /api/pos/sales/stats` - Get sales statistics
 
-### Store
+### Store ✅ Working
 - `GET /api/pos/store/settings` - Get store settings
 - `POST /api/pos/store/settings` - Update store settings
 - `POST /api/pos/store/reset` - Reset all data
 
-### Authentication
+### Authentication ✅ Working
 - `POST /api/auth/sync-user` - Sync Clerk user with employee database
 - Automatic employee creation on first login
 
-### Initialization
+### Initialization ✅ Working
 - `POST /api/pos/initialize` - Initialize database with sample data
 
-### Employees
+### Employees ✅ Working
 - `GET /api/pos/employees` - List all employees (with auth)
 - `POST /api/pos/employees` - Create new employee (admin only)
 - `GET /api/pos/employees/[id]` - Get employee details
 - `PUT /api/pos/employees/[id]` - Update employee
 - `DELETE /api/pos/employees/[id]` - Delete employee (admin only)
+
+### Receipt Generation ✅ Working
+- `GET /api/pos/receipt/[id]` - Generate receipt for sale
+
+### Stock Management ✅ Working
+- `GET /api/pos/stock` - Get stock levels
+- `GET /api/pos/stock/low-stock` - Get low stock alerts
+
+### Barcode Scanning ✅ Working
+- `POST /api/pos/barcode` - Scan barcode and return product
+
+### ⚠️ Advanced Features (In Development)
+
+#### Held Orders ⚠️ Partial Implementation
+- `POST /api/pos/orders/hold` - Hold order (has dependency issues)
+- `GET /api/pos/orders/hold/[id]` - Retrieve held order (has dependency issues)
+- Additional held order endpoints exist but are not functional
+
+#### Order Management ❌ Not Implemented
+- `/api/pos/orders/*` - Advanced order processing (framework exists, logic incomplete)
+- `/api/pos/orders/collaboration/*` - Multi-user collaboration (incomplete)
+- `/api/pos/orders/workflow/*` - Order state machine (not implemented)
+- `/api/pos/orders/jobs/*` - Background job processing (not active)
+- `/api/pos/orders/bulk/*` - Bulk order operations (incomplete)
+
+#### Payment Processing ❌ Partial Framework
+- `/api/pos/payments/*` - Payment provider integration (framework exists, limited functionality)
+- `/api/pos/printers/*` - Printer integration (framework exists, limited testing)
+
+#### Support System ❌ Framework Only
+- `/api/support/*` - Support ticket system (framework exists, not functional)
+
+> **Note**: Many advanced API endpoints exist as framework but lack full implementation. Core POS operations (products, customers, sales, authentication) are fully functional and production-ready.
 
 ## Database Schema
 
@@ -361,21 +482,45 @@ The initialization script creates:
 3. **Network**: Stable internet required for authentication
 4. **Backup**: Export data regularly on mobile devices
 
-## 🚀 Deployment Ready
+## 🚀 Current Status
 
-**Status**: Production Ready ✅
+**Status**: Development Version 0.1.0 ⚠️
+
+### Core Functionality ✅ Ready
+- Basic POS operations (product browsing, cart, checkout)
+- Product and customer management
+- Clerk authentication system
+- Sales tracking and reporting
+- Receipt generation and sharing
+- CSV import/export for products
+- Store configuration and settings
+
+### Advanced Features ⚠️ In Development
+- Held orders system (API exists but has dependency issues)
+- Multi-user collaboration (framework incomplete)
+- Advanced order state management (not implemented)
+- Background job processing (planned but not active)
+- Comprehensive printer integration (limited testing)
+- Payment provider integration (framework exists)
 
 ### Requirements
 - Clerk account with API keys
 - Modern web browser
 - Stable internet connection
 - Touch device recommended for POS operations
+- Development environment for testing advanced features
 
-### Next Steps
-1. Configure production Clerk keys
-2. Set up domain and SSL certificate
-3. Configure production database
-4. Train staff on new features
-5. Begin daily operations
+### Recommended Use
+- **Small Retail Stores**: Core POS features are production-ready
+- **Testing & Development**: Advanced features can be tested but may have issues
+- **Production Deployment**: Test thoroughly before full deployment
+- **Training**: Staff can be trained on core functionality immediately
+
+### Next Steps for Production
+1. Test all core features thoroughly in your environment
+2. Configure production Clerk keys
+3. Set up domain and SSL certificate
+4. Consider PostgreSQL database for high-volume stores
+5. Plan implementation of advanced features based on business needs
 
 

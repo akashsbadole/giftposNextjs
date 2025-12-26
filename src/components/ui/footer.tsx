@@ -286,8 +286,6 @@ export function Footer({ className }: FooterProps) {
         </div>
       </div>
 
-      {/* Decorative gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
     </footer>
   )
 }

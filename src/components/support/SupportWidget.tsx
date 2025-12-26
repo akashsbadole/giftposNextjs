@@ -18,6 +18,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 import { SupportDialog } from "./SupportDialog"
+import { HelpCenter } from "./HelpCenter"
 
 
 
@@ -88,7 +89,7 @@ export function SupportWidget({ position = "bottom-right" }: SupportWidgetProps)
       <div className={`fixed z-50 ${getPositionClasses()}`}>
         <Button
           onClick={() => openDialog("support")}
-          className="h-14 w-14 rounded-full shadow-lg"
+          className="h-14 w-14 rounded-full shadow-lg bg-amber-600"
           variant="default"
           aria-label="Open support menu"
         >

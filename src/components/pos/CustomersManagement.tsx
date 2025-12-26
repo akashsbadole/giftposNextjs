@@ -213,7 +213,7 @@ export default function CustomersManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-150">
-        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
           <p className="text-gray-300 font-medium">Loading customers...</p>
         </div>
@@ -223,7 +223,7 @@ export default function CustomersManagement() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -246,7 +246,7 @@ export default function CustomersManagement() {
                 placeholder="Search customers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="pl-10 border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
@@ -265,7 +265,7 @@ export default function CustomersManagement() {
                   const customerHistory = purchaseHistory.get(customer.id) || []
                   
                   return (
-                    <Card key={customer.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500/20 hover:border-blue-primary/50">
+                    <Card key={customer.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500 hover:border-blue-primary/50">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
@@ -353,7 +353,7 @@ export default function CustomersManagement() {
                                 ) : (
                                   <div className="space-y-2 max-h-48 overflow-y-auto">
                                     {customerHistory.map((purchase) => (
-                                      <div key={purchase.id} className="flex items-center justify-between p-2 rounded border border-blue-500/20 bg-gray-800/50">
+                                      <div key={purchase.id} className="flex items-center justify-between p-2 rounded border border-blue-500 bg-gray-800/50">
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2 mb-1">
                                             <Badge variant="outline" className="text-xs border-blue-primary/30 bg-amber-600 text-gray-500">
@@ -391,7 +391,7 @@ export default function CustomersManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500">
           <DialogHeader>
             <DialogTitle className="text-gray-500">
               {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
@@ -409,7 +409,7 @@ export default function CustomersManagement() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="John Doe"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
@@ -421,7 +421,7 @@ export default function CustomersManagement() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="john@example.com"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
@@ -433,7 +433,7 @@ export default function CustomersManagement() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1 234 567 8900"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
@@ -444,13 +444,13 @@ export default function CustomersManagement() {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="123 Main St, City"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500/20">
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500">
               Cancel
             </Button>
             <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-blue-accent text-white">

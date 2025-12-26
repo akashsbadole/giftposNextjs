@@ -47,7 +47,11 @@ if (isLoaded && !userId) {
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your-key-here
 CLERK_SECRET_KEY=sk_test_your-secret-key-here
+# Configure 15-day sessions (1,296,000 seconds)
+NEXT_PUBLIC_CLERK_SESSION_DURATION=1296000
 ```
+
+> **💡 Session Configuration**: See `CLERK_SESSION_CONFIG.md` for detailed session configuration options including environment variable vs dashboard configuration.
 
 6. Restart the dev server
 

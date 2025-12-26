@@ -161,7 +161,7 @@ Thank you for shopping!
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-blue-500/20">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-blue-500">
         <DialogHeader>
           <DialogTitle className="text-gray-500">Receipt Options</DialogTitle>
         </DialogHeader>
@@ -278,7 +278,7 @@ Thank you for shopping!
                 placeholder="+91XXXXXXXXXX"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsAppNumber(e.target.value)}
-                className="flex-1 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="flex-1 border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
               <Button onClick={handleWhatsAppShare} disabled={!whatsappNumber} className="bg-amber-600 hover:bg-blue-accent text-white">
                 <MessageCircle className="w-4 h-4 mr-2" />
@@ -296,7 +296,7 @@ Thank you for shopping!
                 placeholder="customer@example.com"
                 value={emailTo}
                 onChange={(e) => setEmailTo(e.target.value)}
-                className="flex-1 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="flex-1 border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
               <Button onClick={handleEmailShare} disabled={!emailTo} className="bg-amber-600 hover:bg-blue-accent text-white">
                 <Mail className="w-4 h-4 mr-2" />
@@ -306,7 +306,7 @@ Thank you for shopping!
           </div>
 
           {/* Export CSV */}
-          <Button onClick={handleExportCSV} variant="outline" className="w-full border-blue-500/20">
+          <Button onClick={handleExportCSV} variant="outline" className="w-full border-blue-500">
             <Download className="w-4 h-4 mr-2" />
             Export Receipt as CSV
           </Button>
@@ -314,7 +314,7 @@ Thank you for shopping!
 
         {/* Actions */}
         <div className="flex gap-2 mt-4">
-          <Button variant="outline" className="flex-1 border-blue-500/20" onClick={onClose}>
+          <Button variant="outline" className="flex-1 border-blue-500" onClick={onClose}>
             <X className="w-4 h-4 mr-2" />
             Close
           </Button>

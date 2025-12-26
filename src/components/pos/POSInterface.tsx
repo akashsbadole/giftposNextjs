@@ -26,8 +26,10 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { useSettings } from '@/lib/settings-context'
 import { useBarcodeScanner, type ScanResult } from '@/hooks/use-barcode-scanner'
-import { Search, Plus, Minus, Trash2, Receipt, DollarSign, CreditCard, Smartphone, Database, Package, ShoppingCart, AlertCircle, Camera, CameraOff, Scan, Zap, Printer, Terminal, Wifi, WifiOff } from 'lucide-react'
+import { Search, Plus, Minus, Trash2, Receipt, DollarSign, CreditCard, Smartphone, Database, Package, ShoppingCart, AlertCircle, Camera, CameraOff, Scan, Zap, Printer, Terminal, Wifi, WifiOff, Clock, Pause, Play, List } from 'lucide-react'
 import ReceiptDialog from '@/components/pos/ReceiptDialog'
+import HeldOrdersPanel from '@/components/pos/HeldOrdersPanel'
+import OrderQueueTab from '@/components/pos/OrderQueueTab'
 import React from 'react';
 
 // Types
@@ -91,6 +93,15 @@ export default function POSInterface() {
   const [tenderAmount, setTenderAmount] = useState('')
   const [receiptSale, setReceiptSale] = useState<any>(null)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  
+  // Hold Order functionality
+  const [heldOrdersPanelOpen, setHeldOrdersPanelOpen] = useState(false)
+  const [holdOrderDialogOpen, setHoldOrderDialogOpen] = useState(false)
+  const [tableNumber, setTableNumber] = useState('')
+  const [orderName, setOrderName] = useState('')
+  const [orderNotes, setOrderNotes] = useState('')
+  const [holdOrderLoading, setHoldOrderLoading] = useState(false)
+  const [heldOrdersCount, setHeldOrdersCount] = useState(0)
   
   // Barcode scanning state
   const [scanFeedback, setScanFeedback] = useState<{show: boolean, type: 'success' | 'error' | 'info', message: string}>({show: false, type: 'info', message: ''})
@@ -680,6 +691,149 @@ Thank you for your business!
     }
   }
 
+  // Hold Order Functions
+  const holdCurrentOrder = async () => {
+    if (cart.length === 0) {
+      toast({
+        title: 'Cart is empty',
+        description: 'Cannot hold an empty cart',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setHoldOrderLoading(true)
+    try {
+      const orderData = {
+        items: cart.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          sku: item.sku,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+          category: item.category
+        })),
+        customerId: selectedCustomer?.id || null,
+        tableNumber: tableNumber || null,
+        orderName: orderName || null,
+        subtotal,
+        gst,
+        discount: 0,
+        total,
+        notes: orderNotes || null,
+        storeId: store?.id,
+        priority: 0,
+        isAutoSaved: false
+      }
+
+      const response = await fetch('/api/pos/orders/hold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      })
+
+      if (response.ok) {
+        const heldOrder = await response.json()
+        toast({
+          title: 'Order held successfully',
+          description: `Order ${heldOrder.orderNumber} has been saved`,
+        })
+        
+        // Clear current cart
+        clearCart()
+        setHoldOrderDialogOpen(false)
+        setTableNumber('')
+        setOrderName('')
+        setOrderNotes('')
+        
+        // Update held orders count
+        setHeldOrdersCount(prev => prev + 1)
+      } else {
+        throw new Error('Failed to hold order')
+      }
+    } catch (error) {
+      console.error('Error holding order:', error)
+      toast({
+        title: 'Failed to hold order',
+        description: 'Please try again',
+        variant: 'destructive',
+      })
+    } finally {
+      setHoldOrderLoading(false)
+    }
+  }
+
+  // Retrieve held order and load into cart
+  const retrieveHeldOrder = (heldOrder: any) => {
+    try {
+      // Clear current cart first
+      clearCart()
+      
+      // Set customer if available
+      if (heldOrder.customer) {
+        setSelectedCustomer(heldOrder.customer)
+      }
+      
+      // Load items into cart
+      if (heldOrder.items && Array.isArray(heldOrder.items)) {
+        heldOrder.items.forEach((item: any) => {
+          const product = products.find(p => p.id === item.productId)
+          if (product) {
+            addToCart(product)
+          }
+        })
+      }
+      
+      // Set table number and order name if available
+      if (heldOrder.tableNumber) {
+        setTableNumber(heldOrder.tableNumber)
+      }
+      if (heldOrder.orderName) {
+        setOrderName(heldOrder.orderName)
+      }
+      if (heldOrder.notes) {
+        setOrderNotes(heldOrder.notes)
+      }
+      
+      toast({
+        title: 'Order retrieved successfully',
+        description: `${heldOrder.orderNumber} has been loaded into the cart`,
+      })
+      
+      setHeldOrdersPanelOpen(false)
+    } catch (error) {
+      console.error('Error retrieving held order:', error)
+      toast({
+        title: 'Failed to retrieve order',
+        description: 'Please try again',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  // Load held orders count for display
+  const loadHeldOrdersCount = async () => {
+    if (!store?.id) return
+    
+    try {
+      const response = await fetch(`/api/pos/orders/hold?storeId=${store.id}&status=held&limit=1`)
+      if (response.ok) {
+        const data = await response.json()
+        setHeldOrdersCount(data.pagination?.total || 0)
+      }
+    } catch (error) {
+      console.error('Error loading held orders count:', error)
+    }
+  }
+
+  // Load held orders count when store is available
+  useEffect(() => {
+    if (store?.id) {
+      loadHeldOrdersCount()
+    }
+  }, [store?.id])
+
   // Initialize database with sample data
   const handleInitialize = async () => {
     try {
@@ -713,7 +867,7 @@ Thank you for your business!
   if (loading || settingsLoading) {
     return (
       <div className="flex items-center justify-center h-150">
-        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
           <p className="text-gray-300 font-medium">Loading POS system...</p>
         </div>
@@ -725,7 +879,7 @@ Thank you for your business!
   if (products.length === 0 && categories.length === 0) {
     return (
       <div className="flex items-center justify-center h-150">
-        <Card className="max-w-md w-full bg-gray-900 border-blue-500/20 shadow-xl">
+        <Card className="max-w-md w-full bg-gray-900 border-blue-500 shadow-xl">
           <CardContent className="p-8">
             <div className="text-center">
               <Database className="w-16 h-16 mx-auto mb-4 text-gray-900" />
@@ -774,7 +928,25 @@ Thank you for your business!
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6 min-h-screen">
+      <Tabs defaultValue="pos" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 bg-gray-800 border border-blue-500">
+          <TabsTrigger value="pos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Point of Sale
+          </TabsTrigger>
+          <TabsTrigger value="queue" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <List className="w-4 h-4 mr-2" />
+            Order Queue
+            {heldOrdersCount > 0 && (
+              <Badge className="ml-2 bg-blue-600 text-white text-xs">
+                {heldOrdersCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pos" className="space-y-4">
+          <div className="grid lg:grid-cols-3 gap-6 min-h-screen">
         {/* Products Section */}
         <div className="lg:col-span-2 flex flex-col gap-4">
         {/* Search and Filter Bar */}
@@ -796,14 +968,14 @@ Thank you for your business!
                       }
                     }
                   }}
-                  className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="pl-10 border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
               </div>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-50 border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                <SelectTrigger className="w-50 border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-blue-500/20">
+                <SelectContent className="bg-gray-400 border-amber-500">
                   <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
@@ -833,7 +1005,7 @@ Thank you for your business!
                     startScan()
                   }
                 }}
-                className={`border-blue-500/20 hover:bg-amber-600 ${
+                className={`border-blue-500 hover:bg-amber-600 ${
                   isScanning ? 'text-green-400 border-green-400/50' : 'text-gray-900'
                 }`}
                 title={isScanning ? 'Stop barcode scanning' : 'Start barcode scanning'}
@@ -909,7 +1081,7 @@ Thank you for your business!
         </Card>
 
         {/* Products Grid */}
-        <Card className="flex-1 overflow-hidden bg-gray-900 border-blue-500/20 shadow-sm">
+        <Card className="flex-1 overflow-hidden bg-gray-900 border-blue-500 shadow-sm">
           <CardContent className="p-4 h-full">
             <ScrollArea className="h-[calc(100%-20px)]">
               {filteredProducts.length === 0 ? (
@@ -924,7 +1096,7 @@ Thank you for your business!
                   {filteredProducts.map((product) => (
                     <Card
                       key={product.id}
-                      className="cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02] bg-gray-800 border-blue-500/20 hover:border-blue-primary/50 group"
+                      className="cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02] bg-gray-800 border-blue-500 hover:border-blue-primary/50 group"
                       onClick={() => addToCart(product)}
                     >
                       <CardContent className="p-4">
@@ -984,10 +1156,10 @@ Thank you for your business!
                 value={selectedCustomer?.id || ''}
                 onValueChange={(value) => setSelectedCustomer(customers.find((c) => c.id === value) || null)}
               >
-                <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                <SelectTrigger className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                   <SelectValue placeholder="Walk-in customer" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-blue-500/20">
+                <SelectContent className="bg-gray-400 border-amber-500">
                   <SelectItem value="null">Walk-in customer</SelectItem>
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
@@ -998,7 +1170,7 @@ Thank you for your business!
               </Select>
             </div>
 
-            <Separator className="mb-4 border-blue-500/20" />
+            <Separator className="mb-4 border-blue-500" />
 
             {/* Cart Items */}
             <ScrollArea className="flex-1">
@@ -1013,7 +1185,7 @@ Thank you for your business!
               ) : (
                 <div className="space-y-3">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-blue-500/20 bg-gray-800/50">
+                    <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-blue-500 bg-gray-800/50">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate text-gray-400">{item.name}</p>
                         <p className="text-xs text-gray-400 ">{formatCurrency(item.price)} each</p>
@@ -1054,7 +1226,7 @@ Thank you for your business!
               )}
             </ScrollArea>
 
-            <Separator className="my-4 border-blue-500/20" />
+            <Separator className="my-4 border-blue-500" />
 
             {/* Totals */}
             <div className="space-y-2">
@@ -1066,23 +1238,52 @@ Thank you for your business!
                 <span className="text-gray-400 ">GST ({store?.gstRate || 10}%)</span>
                 <span className="font-medium text-gray-900">{formatCurrency(gst)}</span>
               </div>
-              <Separator className="border-blue-500/20" />
+              <Separator className="border-blue-500" />
               <div className="flex justify-between text-lg font-bold text-white">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
               </div>
             </div>
 
-            {/* Checkout Button */}
-            <Button
-              className="w-full mt-4 h-12 text-lg bg-amber-600 hover:bg-blue-accent text-black shadow-lg hover:shadow-xl transition-all"
-              size="lg"
-              disabled={cart.length === 0}
-              onClick={() => setCheckoutOpen(true)}
-            >
-              <Receipt className="w-5 h-5 mr-2 " />
-              Checkout
-            </Button>
+            {/* Action Buttons */}
+            <div className="space-y-2 mt-4">
+              {/* Recall Held Orders Button */}
+              <Button
+                variant="outline"
+                className="w-full h-10 border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                onClick={() => setHeldOrdersPanelOpen(true)}
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Recall Orders
+                {heldOrdersCount > 0 && (
+                  <Badge className="ml-2 bg-blue-600 text-white text-xs">
+                    {heldOrdersCount}
+                  </Badge>
+                )}
+              </Button>
+              
+              {/* Hold Order Button */}
+              <Button
+                variant="outline"
+                className="w-full h-10 border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
+                disabled={cart.length === 0}
+                onClick={() => setHoldOrderDialogOpen(true)}
+              >
+                <Pause className="w-4 h-4 mr-2" />
+                Hold Order
+              </Button>
+              
+              {/* Checkout Button */}
+              <Button
+                className="w-full h-12 text-lg bg-amber-600 hover:bg-blue-accent text-black shadow-lg hover:shadow-xl transition-all"
+                size="lg"
+                disabled={cart.length === 0}
+                onClick={() => setCheckoutOpen(true)}
+              >
+                <Receipt className="w-5 h-5 mr-2 " />
+                Checkout
+              </Button>
+            </div>
           </CardContent>
         </Card>
         </div>
@@ -1090,18 +1291,18 @@ Thank you for your business!
 
       {/* Checkout Dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-blue-500/20">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-blue-500">
           <DialogHeader>
-            <DialogTitle className="text-gray-900">Complete Payment</DialogTitle>
-            <DialogDescription>Total amount: <span className="text-gray-900 font-semibold">{formatCurrency(total)}</span></DialogDescription>
+            <DialogTitle className="text-gray-300">Complete Payment</DialogTitle>
+            <DialogDescription>Total amount: <span className="text-gray-300 font-semibold">{formatCurrency(total)}</span></DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Payment Method Selection */}
             <div>
-              <label className="text-sm font-medium mb-3 block text-gray-900">Payment Method</label>
+              <label className="text-sm font-medium mb-3 block text-gray-300">Payment Method</label>
               <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
-                <TabsList className="grid grid-cols-3 w-full bg-gray-800 border border-blue-500/20">
+                <TabsList className="grid grid-cols-3 w-full bg-gray-800 border border-blue-500">
                   <TabsTrigger value="cash" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Cash</TabsTrigger>
                   <TabsTrigger value="card" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Card</TabsTrigger>
                   <TabsTrigger value="digital" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Digital</TabsTrigger>
@@ -1117,7 +1318,7 @@ Thank you for your business!
                   placeholder="Enter amount"
                   value={tenderAmount}
                   onChange={(e) => setTenderAmount(e.target.value)}
-                  className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                  className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
                 />
                 {tenderAmount && parseFloat(tenderAmount) >= total && (
                   <p className="text-sm text-gray-900 mt-2 font-medium">
@@ -1136,10 +1337,10 @@ Thank you for your business!
                     value={selectedPaymentProvider}
                     onValueChange={setSelectedPaymentProvider}
                   >
-                    <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                    <SelectTrigger className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                       <SelectValue placeholder="Select payment provider" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-blue-500/20">
+                    <SelectContent className="bg-gray-400 border-amber-500">
                       {paymentProviders.map((provider) => (
                         <SelectItem key={provider.id} value={provider.id}>
                           <div className="flex items-center gap-2">
@@ -1162,10 +1363,10 @@ Thank you for your business!
                       value={selectedPaymentTerminal}
                       onValueChange={setSelectedPaymentTerminal}
                     >
-                      <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                      <SelectTrigger className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                         <SelectValue placeholder="Select payment terminal" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-blue-500/20">
+                      <SelectContent className="bg-gray-400 border-amber-500">
                         {paymentTerminals
                           .filter(terminal => terminal.providerId === selectedPaymentProvider)
                           .map((terminal) => (
@@ -1238,10 +1439,10 @@ Thank you for your business!
                   value={selectedReceiptPrinter}
                   onValueChange={setSelectedReceiptPrinter}
                 >
-                  <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                  <SelectTrigger className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                     <SelectValue placeholder="Select receipt printer" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-blue-500/20">
+                  <SelectContent className="bg-gray-400 border-amber-500">
                     {printers.filter(p => p.type === 'thermal').map((printer) => (
                       <SelectItem key={printer.id} value={printer.id}>
                         <div className="flex items-center gap-2">
@@ -1265,10 +1466,10 @@ Thank you for your business!
                   value={selectedInvoicePrinter}
                   onValueChange={setSelectedInvoicePrinter}
                 >
-                  <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                  <SelectTrigger className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                     <SelectValue placeholder="Select invoice printer" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-blue-500/20">
+                  <SelectContent className="bg-gray-400 border-amber-500">
                     <SelectItem value="none">No invoice printing</SelectItem>
                     {printers.filter(p => p.type === 'inkjet').map((printer) => (
                       <SelectItem key={printer.id} value={printer.id}>
@@ -1289,21 +1490,21 @@ Thank you for your business!
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gray-800/50 rounded-lg p-4 space-y-2 border border-blue-500/20">
+            <div className="bg-gray-800 rounded-lg p-4 space-y-2 border border-blue-500">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Items</span>
-                <span className="font-medium">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                <span className="font-medium text-gray-300">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Subtotal</span>
-                <span className="font-medium">{formatCurrency(subtotal)}</span>
+                <span className="font-medium text-gray-300">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Tax</span>
-                <span className="font-medium">{formatCurrency(gst)}</span>
+                <span className="font-medium text-gray-300">{formatCurrency(gst)}</span>
               </div>
-              <Separator className="border-blue-500/20" />
-              <div className="flex justify-between font-bold text-gray-900">
+              <Separator className="border-blue-500" />
+              <div className="flex justify-between font-bold text-gray-300">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
               </div>
@@ -1311,7 +1512,7 @@ Thank you for your business!
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckoutOpen(false)} className="border-blue-500/20">
+            <Button variant="outline" onClick={() => setCheckoutOpen(false)} className="border-blue-500 text-gray-300">
               Cancel
             </Button>
             <Button
@@ -1334,6 +1535,120 @@ Thank you for your business!
         onClose={() => setReceiptOpen(false)}
         sale={receiptSale}
       />
+      
+      {/* Hold Order Dialog */}
+      <Dialog open={holdOrderDialogOpen} onOpenChange={setHoldOrderDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-gray-900 border-blue-500">
+          <DialogHeader>
+            <DialogTitle className="text-gray-400">Hold Current Order</DialogTitle>
+            <DialogDescription>
+              Save this cart for later processing. Total: <span className="text-gray-400 font-semibold">{formatCurrency(total)}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block text-gray-400">Table Number (Optional)</label>
+              <Input
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                placeholder="Enter table number"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block text-gray-400">Order Name (Optional)</label>
+              <Input
+                value={orderName}
+                onChange={(e) => setOrderName(e.target.value)}
+                placeholder="Enter order name"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block text-gray-400">Notes (Optional)</label>
+              <Input
+                value={orderNotes}
+                onChange={(e) => setOrderNotes(e.target.value)}
+                placeholder="Enter any notes"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+              />
+            </div>
+            
+            {/* Order Summary */}
+            <div className="bg-gray-800/50 rounded-lg p-4 space-y-2 border border-blue-500">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Items</span>
+                <span className="font-medium">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Subtotal</span>
+                <span className="font-medium">{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Tax</span>
+                <span className="font-medium">{formatCurrency(gst)}</span>
+              </div>
+              <Separator className="border-blue-500" />
+              <div className="flex justify-between font-bold text-gray-400">
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setHoldOrderDialogOpen(false)}
+              className="border-blue-500"
+              disabled={holdOrderLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={holdCurrentOrder}
+              disabled={holdOrderLoading}
+              className="gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {holdOrderLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              ) : (
+                <Pause className="w-4 h-4" />
+              )}
+              Hold Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Held Orders Panel */}
+      <HeldOrdersPanel
+        isOpen={heldOrdersPanelOpen}
+        onClose={() => setHeldOrdersPanelOpen(false)}
+        onRetrieveOrder={retrieveHeldOrder}
+        storeId={store?.id || ''}
+      />
+        </TabsContent>
+
+        <TabsContent value="queue" className="space-y-4">
+          <OrderQueueTab
+            storeId={store?.id || ''}
+            onRetrieveOrder={(order) => {
+              retrieveHeldOrder(order)
+              // Switch back to POS tab after retrieving
+              const posTab = document.querySelector('[value="pos"]') as HTMLButtonElement
+              posTab?.click()
+            }}
+            onOrderUpdate={(order) => {
+              // Refresh held orders count
+              loadHeldOrdersCount()
+            }}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

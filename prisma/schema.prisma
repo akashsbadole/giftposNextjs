@@ -28,6 +28,7 @@ model Store {
   employees          Employee[]
   printers           Printer[]
   paymentProviders   PaymentProvider[]
+  heldOrders         HeldOrder[]
 }
 
 // Category for organizing products
@@ -77,6 +78,7 @@ model Customer {
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   sales     Sale[]
+  heldOrders HeldOrder[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -93,6 +95,7 @@ model Employee {
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   sales     Sale[]
+  heldOrders HeldOrder[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -470,6 +473,259 @@ model ErrorReport {
   resolvedBy    String?
   resolvedAt    DateTime?
   resolution    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Held Orders for POS - Open/Hold Orders System
+model HeldOrder {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique // Human-readable order ID
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  employeeId    String?
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+  tableNumber   String?   // For restaurant use
+  orderName     String?   // Custom order name/description
+  itemsData     String    // JSON string of cart items
+  subtotal      Float
+  gst           Float     @default(0)
+  discount      Float     @default(0)
+  total         Float
+  notes         String?
+  status        String    @default("held") // held, retrieved, completed, cancelled, expired
+  priority      Int       @default(0) // For sorting/priority
+  holdDuration  Int?      // Duration in minutes before auto-expire
+  isAutoSaved   Boolean   @default(false) // Whether this was auto-saved
+  tags          String?   // JSON array of tags for organization
+  metadata      String?   // JSON additional metadata
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  retrievedAt   DateTime?
+  expiredAt     DateTime?
+  
+  @@index([storeId, status])
+  @@index([customerId])
+  @@index([employeeId])
+  @@index([createdAt])
+  @@index([status, priority])
+  @@index([tableNumber])
+}
+
+// Collaboration Session Model for real-time multi-user collaboration
+model CollaborationSession {
+  id            String   @id @default(cuid())
+  sessionId     String   @unique // Unique session identifier
+  heldOrderId   String   // Link to held order being collaborated on
+  heldOrder     HeldOrder @relation(fields: [heldOrderId], references: [id], onDelete: Cascade)
+  userId        String   // Clerk user ID
+  userEmail     String?
+  userName      String
+  role          String   @default("collaborator") // owner, editor, viewer, collaborator
+  isActive      Boolean  @default(true)
+  lastSeenAt    DateTime @default(now())
+  cursorPosition String? // JSON string of cursor/selection data
+  editLock      String?  // Field being edited (for granular locking)
+  heartbeatAt   DateTime @default(now()) // For detecting stale sessions
+  metadata      String?  // JSON additional session metadata
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
+  @@index([heldOrderId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([isActive])
+  @@index([heartbeatAt])
+}
+
+// Order Lock Model to prevent conflicts during simultaneous edits
+model OrderLock {
+  id            String   @id @default(cuid())
+  heldOrderId   String   @unique // Only one lock per order
+  heldOrder     HeldOrder @relation(fields: [heldOrderId], references: [id], onDelete: Cascade)
+  userId        String   // Clerk user ID who owns the lock
+  userEmail     String?
+  userName      String
+  lockType      String   @default("full") // full, items, customer, payment, metadata
+  lockScope     String   @default("exclusive") // exclusive, shared, read
+  reason        String?  // Reason for locking (manual, automatic, etc.)
+  isActive      Boolean  @default(true)
+  expiresAt     DateTime? // Optional expiration time
+  acquiredAt    DateTime @default(now())
+  lastRenewedAt DateTime @default(now())
+  metadata      String?  // JSON additional lock metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([heldOrderId])
+  @@index([userId])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+// Order Analytics Model for operational insights
+model OrderAnalytics {
+  id                String   @id @default(cuid())
+  date              DateTime // Date for analytics (truncated to day)
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Basic metrics
+  totalOrders       Int      @default(0)
+  completedOrders   Int      @default(0)
+  cancelledOrders   Int      @default(0)
+  expiredOrders     Int      @default(0)
+  
+  // Financial metrics
+  totalRevenue      Float    @default(0)
+  avgOrderValue     Float    @default(0)
+  totalDiscounts    Float    @default(0)
+  totalGST          Float    @default(0)
+  
+  // Time-based metrics
+  avgProcessingTime Float    @default(0) // Average time to complete orders (in minutes)
+  avgHoldDuration   Float    @default(0) // Average time orders are held (in minutes)
+  peakHourOrders    Int      @default(0) // Orders during peak hour
+  
+  // User activity
+  activeUsers       Int      @default(0) // Unique users who processed orders
+  collaborativeSessions Int @default(0) // Number of collaboration sessions
+  
+  // Category breakdown
+  categoryBreakdown String?  // JSON of orders by category
+  productBreakdown  String?  // JSON of most ordered products
+  
+  // Additional metrics
+  customMetrics     String?  // JSON additional custom metrics
+  metadata          String?  // JSON additional metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([date, storeId])
+  @@index([date])
+  @@index([storeId])
+  @@index([totalRevenue])
+}
+
+// Workflow Rule Model for automated processes
+model WorkflowRule {
+  id            String   @id @default(cuid())
+  name          String   // Human-readable rule name
+  description   String?  // Description of what the rule does
+  isActive      Boolean  @default(true)
+  priority      Int      @default(0) // Higher numbers = higher priority
+  
+  // Trigger conditions
+  triggerType   String   // order_created, order_updated, order_completed, time_based, manual
+  triggerConditions String // JSON conditions that must be met
+  
+  // Rule configuration
+  conditions    String?  // JSON additional conditions
+  actions       String   // JSON array of actions to execute
+  
+  // Execution settings
+  maxExecutions Int      @default(1) // Max times this rule can execute
+  executionCount Int     @default(0)
+  lastExecutedAt DateTime?
+  nextExecutionAt DateTime? // For time-based triggers
+  
+  // Error handling
+  errorCount    Int      @default(0)
+  lastError     String?
+  
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([storeId])
+  @@index([isActive])
+  @@index([priority])
+  @@index([triggerType])
+  @@index([nextExecutionAt])
+}
+
+// Workflow Action Model for tracking rule executions
+model WorkflowAction {
+  id            String   @id @default(cuid())
+  ruleId        String
+  rule          WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  
+  // Execution details
+  executionId   String   @unique // Unique execution identifier
+  status        String   @default("pending") // pending, running, completed, failed, cancelled
+  
+  // Action details
+  actionType    String   // notification, email, webhook, sms, data_update, custom
+  actionConfig  String   // JSON configuration for the action
+  
+  // Execution context
+  contextData   String?  // JSON context data (order info, user info, etc.)
+  
+  // Results
+  result        String?  // JSON result of action execution
+  errorMessage  String?  // Error message if failed
+  
+  // Timing
+  startedAt     DateTime?
+  completedAt   DateTime?
+  duration      Float?   // Execution duration in milliseconds
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([ruleId])
+  @@index([executionId])
+  @@index([status])
+  @@index([actionType])
+  @@index([startedAt])
+}
+
+// Job Queue Model for managing automated lifecycle tasks
+model JobQueue {
+  id            String   @id @default(cuid())
+  jobId         String   @unique // Unique job identifier
+  type          String   // order_cleanup, analytics_update, notification, reminder, sync, custom
+  
+  // Job configuration
+  jobData       String   // JSON job payload
+  priority      Int      @default(0) // Higher numbers = higher priority
+  
+  // Scheduling
+  scheduledAt   DateTime // When job should run
+  startedAt     DateTime? // When job actually started
+  completedAt   DateTime? // When job finished
+  
+  // Execution status
+  status        String   @default("pending") // pending, running, completed, failed, cancelled, retrying
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  
+  // Results
+  result        String?  // JSON result data
+  errorMessage  String?  // Error message if failed
+  errorStack    String?  // Error stack trace
+  
+  // Dependencies and relationships
+  dependsOn     String?  // JSON array of job IDs this job depends on
+  parentJobId   String?  // ID of parent job (for job chains)
+  
+  // Metadata
+  metadata      String?  // JSON additional metadata
+  storeId       String?  // Optional store context
+  userId        String?  // Optional user context
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([jobId])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([startedAt])
+  @@index([storeId])
+  @@index([parentJobId])
 }

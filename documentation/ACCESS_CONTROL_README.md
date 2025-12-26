@@ -66,6 +66,24 @@ ALLOWED_USER_IDS=user_12345,user_67890,user_abcde
 | `ALLOWED_USERS` | Allowed email addresses (if mode=email) | `admin@store.com,manager@store.com` | Yes (if mode=email) |
 | `ALLOWED_USER_IDS` | Allowed Clerk User IDs (if mode=user_id) | `user_12345,user_67890` | Yes (if mode=user_id) |
 
+### Session Configuration
+
+The system supports configurable session duration for optimal user experience:
+
+| Variable | Description | Example | Default |
+|----------|-------------|---------|----------|
+| `NEXT_PUBLIC_CLERK_SESSION_DURATION` | Session duration in seconds | `1296000` (15 days) | `1296000` |
+
+**Available Session Durations:**
+- `60` - 1 minute (development only)
+- `3600` - 1 hour (development/testing)
+- `86400` - 1 day (short sessions)
+- `604800` - 1 week (standard sessions)
+- `1296000` - 15 days (recommended for POS systems)
+- `2592000` - 30 days (maximum for production)
+
+> **💡 Note**: Session configuration can be set via environment variables or Clerk Dashboard. See `CLERK_SESSION_CONFIG.md` for detailed setup instructions.
+
 ---
 
 ## 🚀 Quick Setup Guide

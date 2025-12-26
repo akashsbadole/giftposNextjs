@@ -231,7 +231,7 @@ export default function EmployeesManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-150">
-        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
           <p className="text-gray-300 font-medium">Loading employees...</p>
         </div>
@@ -241,7 +241,7 @@ export default function EmployeesManagement() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -264,7 +264,7 @@ export default function EmployeesManagement() {
                 placeholder="Search employees..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="pl-10 border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function EmployeesManagement() {
                 </div>
               ) : (
                 filteredEmployees.map((employee) => (
-                  <Card key={employee.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500/20 hover:border-blue-primary/50">
+                  <Card key={employee.id} className="hover:shadow-lg transition-all bg-gray-800 border-blue-500 hover:border-blue-primary/50">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -356,7 +356,7 @@ export default function EmployeesManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500/20">
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-blue-500">
           <DialogHeader>
             <DialogTitle className="text-gray-500">
               {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
@@ -374,7 +374,7 @@ export default function EmployeesManagement() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="John Doe"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
@@ -386,7 +386,7 @@ export default function EmployeesManagement() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="john@example.com"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
@@ -398,17 +398,17 @@ export default function EmployeesManagement() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1 234 567 8900"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="role" className="text-gray-500">Role *</Label>
               <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
-                <SelectTrigger className="border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
+                <SelectTrigger className="border-blue-500 bg-gray-800 text-white focus:border-blue-primary focus:ring-blue-primary/20">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-blue-500/20">
+                <SelectContent className="bg-gray-400 border-amber-500">
                   <SelectItem value="cashier">Cashier</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
@@ -423,13 +423,13 @@ export default function EmployeesManagement() {
                 value={formData.clerkId}
                 onChange={(e) => setFormData({ ...formData, clerkId: e.target.value })}
                 placeholder="Optional - for authentication"
-                className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+                className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500/20">
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-blue-500">
               Cancel
             </Button>
             <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-blue-accent text-white">

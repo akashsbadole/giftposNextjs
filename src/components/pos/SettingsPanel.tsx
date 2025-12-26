@@ -706,7 +706,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-150">
-        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500/20">
+        <div className="text-center bg-gray-900 rounded-xl p-8 shadow-lg border border-blue-500">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-primary mx-auto mb-4"></div>
           <p className="text-gray-300 font-medium">Loading settings...</p>
         </div>
@@ -717,7 +717,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
   return (
     <div className="max-w-2xl space-y-6">
       {/* Store Information */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex items-center gap-2">
             <Store className="w-5 h-5 text-gray-500" />
@@ -733,7 +733,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="My Awesome Store"
-              className={errors.name ? 'border-red-500' : 'border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
+              className={errors.name ? 'border-red-500' : 'border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
             />
             {errors.name && (
               <p className="text-sm text-red-500 flex items-center gap-1">
@@ -750,7 +750,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="123 Main St, City"
-              className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
+              className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20"
             />
           </div>
 
@@ -763,7 +763,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1 234 567 8900"
-                className={errors.phone ? 'border-red-500' : 'border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
+                className={errors.phone ? 'border-red-500' : 'border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
               />
               {errors.phone && (
                 <p className="text-sm text-red-500 flex items-center gap-1">
@@ -780,7 +780,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="store@example.com"
-                className={errors.email ? 'border-red-500' : 'border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
+                className={errors.email ? 'border-red-500' : 'border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
               />
               {errors.email && (
                 <p className="text-sm text-red-500 flex items-center gap-1">
@@ -794,7 +794,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* GST & Currency */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <CardTitle className="text-gray-500">GST & Currency</CardTitle>
           <CardDescription>Configure Goods and Services Tax rate and currency settings</CardDescription>
@@ -810,7 +810,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
               max="100"
               value={formData.gstRate}
               onChange={(e) => setFormData({ ...formData, gstRate: e.target.value })}
-              className={errors.gstRate ? 'border-red-500' : 'border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
+              className={errors.gstRate ? 'border-red-500' : 'border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
             />
             {errors.gstRate ? (
               <p className="text-sm text-red-500 flex items-center gap-1">
@@ -834,7 +834,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
               max="100"
               value={formData.taxRate}
               onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
-              className={errors.taxRate ? 'border-red-500' : 'border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
+              className={errors.taxRate ? 'border-red-500' : 'border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
             />
             {errors.taxRate ? (
               <p className="text-sm text-red-500 flex items-center gap-1">
@@ -856,7 +856,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
               onChange={(e) => setFormData({ ...formData, currency: e.target.value.toUpperCase() })}
               placeholder="USD"
               maxLength={3}
-              className={errors.currency ? 'border-red-500' : 'border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
+              className={errors.currency ? 'border-red-500' : 'border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary focus:ring-blue-primary/20'}
             />
             {errors.currency ? (
               <p className="text-sm text-red-500 flex items-center gap-1">
@@ -879,7 +879,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* Database Management */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex items-center gap-2">
             <Database className="w-5 h-5 text-gray-500" />
@@ -888,7 +888,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
           <CardDescription>Manage your store data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg border border-blue-500/20 bg-red-900/20">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-blue-500 bg-red-900/20">
             <div className="flex-1">
               <h4 className="font-medium text-gray-500">Reset All Data</h4>
               <p className="text-sm text-gray-400  mt-1">
@@ -910,7 +910,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* Printer Management */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -942,7 +942,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
           ) : (
             <div className="space-y-3">
               {printers.map((printer) => (
-                <div key={printer.id} className="flex items-center justify-between p-4 rounded-lg border border-blue-500/20 bg-gray-800/50">
+                <div key={printer.id} className="flex items-center justify-between p-4 rounded-lg border border-blue-500 bg-gray-800/50">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       {printer.statusInfo?.online ? (
@@ -1009,7 +1009,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
 
           {/* Printer Form */}
           {showPrinterForm && (
-            <div className="border border-blue-500/20 rounded-lg p-4 bg-gray-800/30">
+            <div className="border border-blue-500 rounded-lg p-4 bg-gray-800/30">
               <h4 className="font-medium text-gray-500 mb-4">
                 {editingPrinter ? 'Edit Printer' : 'Add New Printer'}
               </h4>
@@ -1020,7 +1020,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={printerFormData.name}
                     onChange={(e) => setPrinterFormData({ ...printerFormData, name: e.target.value })}
                     placeholder="Main Receipt Printer"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1028,7 +1028,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                   <select
                     value={printerFormData.type}
                     onChange={(e) => setPrinterFormData({ ...printerFormData, type: e.target.value })}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white focus:border-blue-primary"
                   >
                     <option value="thermal">Thermal (Receipt)</option>
                     <option value="inkjet">Inkjet (Invoice)</option>
@@ -1040,7 +1040,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                   <select
                     value={printerFormData.brand}
                     onChange={(e) => setPrinterFormData({ ...printerFormData, brand: e.target.value })}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white focus:border-blue-primary"
                   >
                     <option value="Epson">Epson</option>
                     <option value="Star">Star</option>
@@ -1057,7 +1057,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={printerFormData.model}
                     onChange={(e) => setPrinterFormData({ ...printerFormData, model: e.target.value })}
                     placeholder="TM-T88V"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1065,7 +1065,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                   <select
                     value={printerFormData.connection}
                     onChange={(e) => setPrinterFormData({ ...printerFormData, connection: e.target.value })}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white focus:border-blue-primary"
                   >
                     <option value="usb">USB</option>
                     <option value="bluetooth">Bluetooth</option>
@@ -1079,7 +1079,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                       type="checkbox"
                       checked={printerFormData.isDefault}
                       onChange={(e) => setPrinterFormData({ ...printerFormData, isDefault: e.target.checked })}
-                      className="rounded border-blue-500/20 bg-gray-800 text-gray-500 focus:ring-blue-primary"
+                      className="rounded border-blue-500 bg-gray-800 text-gray-500 focus:ring-blue-primary"
                     />
                     Set as Default
                   </Label>
@@ -1102,7 +1102,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* Payment Provider Management */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1134,7 +1134,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
           ) : (
             <div className="space-y-3">
               {paymentProviders.map((provider) => (
-                <div key={provider.id} className="flex items-center justify-between p-4 rounded-lg border border-blue-500/20 bg-gray-800/50">
+                <div key={provider.id} className="flex items-center justify-between p-4 rounded-lg border border-blue-500 bg-gray-800/50">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2">
@@ -1209,7 +1209,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
 
           {/* Payment Provider Form */}
           {showPaymentProviderForm && (
-            <div className="border border-blue-500/20 rounded-lg p-4 bg-gray-800/30">
+            <div className="border border-blue-500 rounded-lg p-4 bg-gray-800/30">
               <h4 className="font-medium text-gray-500 mb-4">
                 {editingPaymentProvider ? 'Edit Payment Provider' : 'Add New Payment Provider'}
               </h4>
@@ -1220,7 +1220,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={paymentProviderFormData.name}
                     onChange={(e) => setPaymentProviderFormData({ ...paymentProviderFormData, name: e.target.value })}
                     placeholder="paytm, pinelabs, razorpay"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1229,7 +1229,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={paymentProviderFormData.displayName}
                     onChange={(e) => setPaymentProviderFormData({ ...paymentProviderFormData, displayName: e.target.value })}
                     placeholder="Paytm, PineLabs, Razorpay"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1237,7 +1237,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                   <select
                     value={paymentProviderFormData.type}
                     onChange={(e) => setPaymentProviderFormData({ ...paymentProviderFormData, type: e.target.value })}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white focus:border-blue-primary"
                   >
                     <option value="terminal">Terminal Only</option>
                     <option value="api">API Only</option>
@@ -1250,7 +1250,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                       type="checkbox"
                       checked={paymentProviderFormData.isActive}
                       onChange={(e) => setPaymentProviderFormData({ ...paymentProviderFormData, isActive: e.target.checked })}
-                      className="rounded border-blue-500/20 bg-gray-800 text-gray-500 focus:ring-blue-primary"
+                      className="rounded border-blue-500 bg-gray-800 text-gray-500 focus:ring-blue-primary"
                     />
                     Active
                   </Label>
@@ -1263,7 +1263,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     onChange={(e) => setPaymentProviderFormData({ ...paymentProviderFormData, config: e.target.value })}
                     placeholder='{"environment": "sandbox", "apiKey": "your_key"}'
                     rows={3}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                   <p className="text-xs text-gray-400 ">JSON configuration for the payment provider</p>
                 </div>
@@ -1274,7 +1274,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     onChange={(e) => setPaymentProviderFormData({ ...paymentProviderFormData, capabilities: e.target.value })}
                     placeholder='["card_swipe", "upi", "wallet"]'
                     rows={2}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                   <p className="text-xs text-gray-400 ">Supported payment methods as JSON array</p>
                 </div>
@@ -1304,7 +1304,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* Payment Terminal Management */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1336,7 +1336,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
           ) : (
             <div className="space-y-3">
               {paymentTerminals.map((terminal) => (
-                <div key={terminal.id} className="flex items-center justify-between p-4 rounded-lg border border-blue-500/20 bg-gray-800/50">
+                <div key={terminal.id} className="flex items-center justify-between p-4 rounded-lg border border-blue-500 bg-gray-800/50">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       {terminal.statusInfo?.online ? (
@@ -1430,7 +1430,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
 
           {/* Payment Terminal Form */}
           {showPaymentTerminalForm && (
-            <div className="border border-blue-500/20 rounded-lg p-4 bg-gray-800/30">
+            <div className="border border-blue-500 rounded-lg p-4 bg-gray-800/30">
               <h4 className="font-medium text-gray-500 mb-4">
                 {editingPaymentTerminal ? 'Edit Payment Terminal' : 'Add New Payment Terminal'}
               </h4>
@@ -1441,7 +1441,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={paymentTerminalFormData.name}
                     onChange={(e) => setPaymentTerminalFormData({ ...paymentTerminalFormData, name: e.target.value })}
                     placeholder="Main Payment Terminal"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1450,7 +1450,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={paymentTerminalFormData.terminalId}
                     onChange={(e) => setPaymentTerminalFormData({ ...paymentTerminalFormData, terminalId: e.target.value })}
                     placeholder="Device ID from provider"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1458,7 +1458,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                   <select
                     value={paymentTerminalFormData.providerId}
                     onChange={(e) => setPaymentTerminalFormData({ ...paymentTerminalFormData, providerId: e.target.value })}
-                    className="w-full p-2 rounded-md border border-blue-500/20 bg-gray-800 text-white focus:border-blue-primary"
+                    className="w-full p-2 rounded-md border border-blue-500 bg-gray-800 text-white focus:border-blue-primary"
                   >
                     <option value="">Select Provider</option>
                     {paymentProviders.map((provider) => (
@@ -1474,7 +1474,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={paymentTerminalFormData.model}
                     onChange={(e) => setPaymentTerminalFormData({ ...paymentTerminalFormData, model: e.target.value })}
                     placeholder="Paytm Soundbox, PineLabs Ezetap"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1483,7 +1483,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                     value={paymentTerminalFormData.serialNumber}
                     onChange={(e) => setPaymentTerminalFormData({ ...paymentTerminalFormData, serialNumber: e.target.value })}
                     placeholder="Hardware serial number"
-                    className="border-blue-500/20 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
+                    className="border-blue-500 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-primary"
                   />
                 </div>
               </div>
@@ -1512,7 +1512,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* Security Status Dashboard */}
-      <Card className="bg-gray-900 border-blue-500/20 shadow-md">
+      <Card className="bg-gray-900 border-blue-500 shadow-md">
         <CardHeader className="bg-linear-to-r from-blue-primary/10 to-blue-accent/10">
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-gray-500" />
@@ -1532,7 +1532,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
               <div className="text-xs text-gray-400 ">Last 24 hours</div>
             </div>
             
-            <div className="bg-gray-800/50 rounded-lg p-4 border border-blue-500/20">
+            <div className="bg-gray-800/50 rounded-lg p-4 border border-blue-500">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-4 h-4 text-blue-400" />
                 <span className="text-sm text-gray-300">Security Events</span>
@@ -1593,7 +1593,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
                   severity: 'low'
                 }
               ].map((event, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-blue-500/20 bg-gray-800/30">
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-blue-500 bg-gray-800/30">
                   <div className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full ${
                       event.severity === 'high' ? 'bg-red-400' :
@@ -1678,7 +1678,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
           </div>
 
           {/* Rate Limiting Status */}
-          <div className="mt-4 p-4 rounded-lg border border-blue-500/20 bg-blue-900/20">
+          <div className="mt-4 p-4 rounded-lg border border-blue-500 bg-blue-900/20">
             <div className="flex items-center gap-2 mb-2">
               <Lock className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-medium text-blue-400">Rate Limiting Active</span>
@@ -1704,7 +1704,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
           </div>
 
           {/* Input Sanitization Status */}
-          <div className="mt-4 p-4 rounded-lg border border-blue-500/20 bg-purple-900/20">
+          <div className="mt-4 p-4 rounded-lg border border-blue-500 bg-purple-900/20">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="w-4 h-4 text-purple-400" />
               <span className="text-sm font-medium text-purple-400">Input Sanitization</span>
@@ -1722,7 +1722,7 @@ export default function SettingsPanel({ employee }: { employee?: any }) {
       </Card>
 
       {/* Actions */}
-      <div className="flex justify-between items-center bg-gray-900 border border-blue-500/20 rounded-lg p-4">
+      <div className="flex justify-between items-center bg-gray-900 border border-blue-500 rounded-lg p-4">
         <div className="flex items-center gap-2 text-sm text-gray-400 ">
           {hasChanges && (
             <>
