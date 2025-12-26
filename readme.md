@@ -3,12 +3,12 @@
 A comprehensive Point of Sale (POS) application for retail stores including liquor stores, gift shops, garment stores, and general retail businesses.
 
 ## Screenshot
-![Retail-POS-System-customer](screenshots\Retail-POS-System-customer.png "Retail-POS-System-customer")
-![Retail-POS-System-employee](screenshots\Retail-POS-System-employee.png "Retail-POS-System-employee")
-![Retail-POS-System-homepage](screenshots\Retail-POS-System-homepage.png "Retail-POS-System-homepage")
-![Retail-POS-System-products](screenshots\Retail-POS-System-products.png "Retail-POS-System-products")
-![Retail-POS-System-reports](screenshots\Retail-POS-System-reports.png "Retail-POS-System-reports")
-![Retail-POS-System-settings](screenshots\Retail-POS-System-settings.png "Retail-POS-System-settings")
+![Retail-POS-System-customer](screenshots/Retail-POS-System-customer.png "Retail-POS-System-customer")
+![Retail-POS-System-employee](screenshots/Retail-POS-System-employee.png "Retail-POS-System-employee")
+![Retail-POS-System-homepage](screenshots/Retail-POS-System-homepage.png "Retail-POS-System-homepage")
+![Retail-POS-System-products](screenshots/Retail-POS-System-products.png "Retail-POS-System-products")
+![Retail-POS-System-reports](screenshots/Retail-POS-System-reports.png "Retail-POS-System-reports")
+![Retail-POS-System-settings](screenshots/Retail-POS-System-settings.png "Retail-POS-System-settings")
 
 ## ⚠️ Development Status
 
