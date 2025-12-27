@@ -1,0 +1,68 @@
+Name,SKU,Barcode,Price,Cost,Stock,Min Stock,Category,Description,Status
+Cola 500ml,BEV-001,1234567890001,2.50,1.50,50,10,Beverages,Refreshing cola soft drink,Active
+Orange Juice 1L,BEV-002,1234567890002,3.99,2.50,30,8,Beverages,Fresh orange juice,Active
+Mineral Water 500ml,BEV-003,1234567890003,1.50,0.80,100,20,Beverages,Natural mineral water,Active
+Energy Drink 250ml,BEV-ENR-001,8901234567001,4.99,3.20,85,15,Beverages,High-energy drink with caffeine and vitamins,Active
+Fresh Apple Juice 1L,BEV-AJ-001,8901234567002,5.49,3.50,42,10,Beverages,Pure apple juice no added sugar,Active
+Cold Brew Coffee 350ml,BEV-CBC-001,8901234567003,6.99,4.80,8,12,Beverages,Premium cold brew coffee,Active
+Potato Chips,SNK-001,1234567890101,3.99,2.20,40,10,Snacks,Classic salted potato chips,Active
+Chocolate Bar,SNK-002,1234567890102,1.99,1.20,60,15,Snacks,Milk chocolate bar,Active
+Premium Mixed Nuts 200g,SNK-NUT-001,8901234567101,12.99,8.50,28,8,Snacks,Assorted premium nuts and dried fruits,Active
+Organic Granola Bars (6 pack),SNK-GRB-001,8901234567102,7.99,5.20,0,15,Snacks,Healthy oat granola bars with honey,Active
+Sea Salt Pretzels,SNK-PTZ-001,8901234567103,3.49,2.10,67,20,Snacks,Crispy pretzels with sea salt,Active
+Holiday Special Chocolate Box,SEA-CHC-HOL,8901234569101,29.99,20.50,25,10,Snacks,Premium chocolate assortment - Limited Edition,Active
+Fresh Milk 1L,DAI-001,1234567890201,2.99,1.80,25,8,Dairy & Eggs,Whole fresh milk,Active
+Large Eggs (12),DAI-002,1234567890202,4.99,3.20,20,5,Dairy & Eggs,Farm fresh eggs 12 pack,Active
+Greek Yogurt,DAI-003,1234567890203,3.49,2.00,35,10,Dairy & Eggs,Greek yogurt 500g,Active
+Organic Whole Milk 1L,DAI-MLK-001,8901234567201,4.29,2.80,35,12,Dairy & Eggs,Farm fresh organic whole milk,Active
+Aged Cheddar Cheese 500g,DAI-CHD-001,8901234567202,8.99,6.20,18,8,Dairy & Eggs,Premium aged cheddar cheese,Active
+Free-Range Eggs (18 pack),DAI-EGG-001,8901234567203,7.49,5.10,6,10,Dairy & Eggs,Large free-range eggs 18 count,Active
+Whole Wheat Bread,BAK-001,1234567890301,3.49,2.00,15,5,Baked Goods,Fresh whole wheat bread,Active
+Croissants (4 pack),BAK-002,1234567890302,4.99,3.00,12,4,Baked Goods,Butter croissants,Active
+Sourdough Bread Loaf,BAK-SOU-001,8901234567301,5.99,3.80,12,6,Baked Goods,Artisan sourdough bread freshly baked,Active
+Chocolate Croissants (6 pack),BAK-CHC-001,8901234567302,8.99,6.50,15,8,Baked Goods,Buttery croissants with chocolate filling,Active
+Shampoo 400ml,PER-001,1234567890401,6.99,4.50,30,10,Personal Care,Gentle shampoo,Active
+Toothpaste,PER-002,1234567890402,3.49,2.20,45,12,Personal Care,Mint toothpaste 100ml,Active
+Luxury Body Lotion 500ml,PER-BDL-001,8901234567401,12.99,8.80,25,10,Personal Care,Moisturizing body lotion with natural oils,Active
+Electric Toothbrush,PER-ETB-001,8901234567402,39.99,28.50,15,5,Personal Care,Rechargeable electric toothbrush,Active
+Wireless Bluetooth Headphones,ELE-BTH-001,8901234568001,89.99,65.00,22,8,Electronics,High-quality wireless headphones with noise cancellation,Active
+USB-C Cable 3m,ELE-USC-001,8901234568002,15.99,10.50,45,20,Electronics,Fast charging USB-C cable,Active
+Power Bank 20000mAh,ELE-PWB-001,8901234568003,34.99,24.80,18,10,Electronics,High-capacity portable power bank,Active
+Wireless Phone Charger,ELE-WPC-001,8901234568004,24.99,17.50,7,12,Electronics,Fast wireless charging pad,Active
+Out of Stock Test Product,TEST-OUT-001,8901234569202,25.99,18.20,0,5,Electronics,Product with zero stock for testing out-of-stock scenarios,Active
+Discontinued Product,DISC-001,8901234569301,12.99,8.50,0,5,Electronics,Product that has been discontinued,Inactive
+Classic Cotton T-Shirt - White M,CLO-TSH-WM,8901234568101,19.99,12.50,35,15,Clothing & Apparel,Comfortable 100% cotton t-shirt size Medium White,Active
+Classic Cotton T-Shirt - Black L,CLO-TSH-BL,8901234568102,19.99,12.50,28,15,Clothing & Apparel,Comfortable 100% cotton t-shirt size Large Black,Active
+Denim Jeans - Blue 32W,CLO-JNS-B32,8901234568103,49.99,35.20,42,18,Clothing & Apparel,Classic fit denim jeans waist size 32 Blue,Active
+Denim Jeans - Black 34W,CLO-JNS-B34,8901234568104,49.99,35.20,0,18,Clothing & Apparel,Classic fit denim jeans waist size 34 Black,Active
+Wool Sweater - Navy M,CLO-SWR-NM,8901234568105,79.99,58.50,12,8,Clothing & Apparel,Premium wool sweater size Medium Navy Blue,Active
+Stainless Steel Cookware Set (10 piece),HOM-CKW-001,8901234568201,129.99,89.50,8,5,Home & Kitchen,Professional grade stainless steel cookware set,Active
+Coffee Maker - Programmable,HOM-CFM-001,8901234568202,79.99,55.80,15,8,Home & Kitchen,12-cup programmable coffee maker,Active
+Bamboo Cutting Board Large,HOM-CBB-001,8901234568203,24.99,16.80,32,15,Home & Kitchen,Large bamboo cutting board with juice groove,Active
+Summer Beach Towel,SEA-BTW-SUM,8901234569102,19.99,13.80,35,15,Home & Kitchen,Large absorbent beach towel with tropical design,Active
+Temporarily Disabled Product,DISAB-001,8901234569302,18.99,12.80,15,8,Home & Kitchen,Product temporarily disabled for maintenance,Inactive
+Hardcover Novel - Fiction,BOK-NOV-FIC,8901234568301,24.99,16.20,45,20,Books & Stationery,Bestselling fiction novel hardcover edition,Active
+Notebook - A5 Ruled (3 pack),BOK-NTB-A5,8901234568302,12.99,8.50,68,25,Books & Stationery,Premium ruled notebooks A5 size 3 pack,Active
+Gel Pen Set - 12 colors,BOK-GPN-012,8901234568303,15.99,10.80,38,15,Books & Stationery,Smooth writing gel pens 12 vibrant colors,Active
+Low Stock Test Product,TEST-LOW-001,8901234569201,15.99,10.50,2,8,Books & Stationery,Product with very low stock for testing alerts,Active
+Office Paper A4 (10 reams),WHS-PAP-A4,8901234569002,49.99,35.80,3,5,Books & Stationery,White copy paper A4 size 10 ream bulk pack,Active
+Vitamin C Tablets (100 count),HLT-VTC-100,8901234568401,18.99,12.50,42,15,Health & Wellness,High-potency vitamin C supplements,Active
+Protein Powder - Chocolate 1kg,HLT-PPW-CH,8901234568402,54.99,38.80,25,10,Health & Wellness,Whey protein powder chocolate flavor,Active
+Digital Blood Pressure Monitor,HLT-BPM-001,8901234568403,69.99,48.50,12,6,Health & Wellness,Automatic digital blood pressure monitor,Active
+Educational Building Blocks Set,TOY-BLK-001,8901234568501,29.99,20.80,18,10,Toys & Games,Colorful educational building blocks 100 pieces,Active
+Board Game - Strategy,TOY-BGD-001,8901234568502,39.99,28.50,15,8,Toys & Games,Family strategy board game for 2-6 players,Active
+Action Figure - Collectible,TOY-AFC-001,8901234568503,24.99,17.20,8,12,Toys & Games,Detailed action figure with accessories,Active
+Motor Oil 5W-30 (4L),AUT-MOL-530,8901234568601,34.99,24.80,22,10,Automotive,High-performance synthetic motor oil,Active
+Car Air Freshener - Vanilla,AUT-AFV-001,8901234568602,8.99,5.80,55,20,Automotive,Long-lasting car air freshener vanilla scent,Active
+Emergency Road Kit,AUT-ERK-001,8901234568603,49.99,35.20,6,5,Automotive,Complete emergency roadside assistance kit,Active
+Organic Plant Fertilizer 2kg,GRD-FER-ORG,8901234568701,19.99,13.50,32,15,Garden & Outdoor,All-purpose organic plant fertilizer,Active
+Garden Hose 50ft,GRD-HOS-050,8901234568702,34.99,24.80,18,8,Garden & Outdoor,Durable garden hose with brass fittings,Active
+Bird Feeder - Window Mount,GRD-BFW-001,8901234568703,24.99,17.20,12,8,Garden & Outdoor,Clear window-mounted bird feeder,Active
+Basmati Rice 5kg,GRC-RIC-BAS,8901234568801,22.99,16.50,45,20,Grocery Essentials,Premium aged basmati rice,Active
+Olive Oil Extra Virgin 1L,GRC-OIL-OLV,8901234568802,18.99,13.20,28,12,Grocery Essentials,Cold-pressed extra virgin olive oil,Active
+Sea Salt 1kg,GRC-SLT-SEA,8901234568803,6.99,4.50,65,25,Grocery Essentials,Pure sea salt coarse grain,Active
+Bulk Coffee Beans 5kg,WHS-CFB-005,8901234569001,89.99,65.20,5,3,Grocery Essentials,Premium roast coffee beans wholesale size,Active
+Multi-Surface Cleaner 1L,CLN-MSC-001,8901234568901,8.99,5.80,58,25,Cleaning Supplies,All-purpose surface cleaning solution,Active
+Dishwashing Liquid 500ml,CLN-DSL-500,8901234568902,4.99,3.20,72,30,Cleaning Supplies,Concentrated dishwashing liquid,Active
+Microfiber Cleaning Cloths (10 pack),CLN-MFC-010,8901234568903,12.99,8.50,8,15,Cleaning Supplies,Lint-free microfiber cleaning cloths,Active
+High Stock Product,TEST-HGH-001,8901234569203,8.99,5.80,250,50,Cleaning Supplies,Product with high stock levels for testing inventory,Active

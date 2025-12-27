@@ -26,10 +26,11 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { useSettings } from '@/lib/settings-context'
 import { useBarcodeScanner, type ScanResult } from '@/hooks/use-barcode-scanner'
-import { Search, Plus, Minus, Trash2, Receipt, DollarSign, CreditCard, Smartphone, Database, Package, ShoppingCart, AlertCircle, Camera, CameraOff, Scan, Zap, Printer, Terminal, Wifi, WifiOff, Clock, Pause, Play, List } from 'lucide-react'
+import { Search, Plus, Minus, Trash2, Receipt, DollarSign, CreditCard, Smartphone, Database, Package, ShoppingCart, AlertCircle, Camera, CameraOff, Scan, Zap, Printer, Terminal, Wifi, WifiOff, Clock, Pause, Play, List, Vault } from 'lucide-react'
 import ReceiptDialog from '@/components/pos/ReceiptDialog'
 import HeldOrdersPanel from '@/components/pos/HeldOrdersPanel'
 import OrderQueueTab from '@/components/pos/OrderQueueTab'
+import CashDrawerDashboard from '@/components/pos/CashDrawerDashboard'
 import React from 'react';
 
 // Types
@@ -119,6 +120,9 @@ export default function POSInterface() {
   const [selectedPaymentTerminal, setSelectedPaymentTerminal] = useState<string>('')
   const [paymentStatus, setPaymentStatus] = useState<{show: boolean, type: 'processing' | 'success' | 'error', message: string, transactionId?: string}>({show: false, type: 'processing', message: ''})
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+
+  // Current employee for cash drawer operations
+  const [currentEmployee, setCurrentEmployee] = useState<{id: string, name: string, clerkId?: string} | null>(null)
 
   // Handle barcode scan result
   const handleBarcodeScan = useCallback(async (result: ScanResult) => {
@@ -329,10 +333,11 @@ export default function POSInterface() {
       }
 
       // Now load the data (settings are loaded by context)
-      const [productsRes, categoriesRes, customersRes] = await Promise.all([
+      const [productsRes, categoriesRes, customersRes, employeeRes] = await Promise.all([
         fetch('/api/pos/products'),
         fetch('/api/pos/categories'),
         fetch('/api/pos/customers'),
+        fetch('/api/pos/employees') // Get current employee
       ])
 
       if (productsRes.ok) {
@@ -348,6 +353,14 @@ export default function POSInterface() {
       if (customersRes.ok) {
         const customersData = await customersRes.json()
         setCustomers(customersData)
+      }
+
+      if (employeeRes.ok) {
+        const employeesData = await employeeRes.json()
+        // Get the current employee (first one for now, in real app this would be based on auth)
+        if (employeesData.length > 0) {
+          setCurrentEmployee(employeesData[0])
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error)
@@ -912,7 +925,7 @@ Thank you for your business!
       )}
 
       <Tabs defaultValue="pos" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-800 border border-blue-500">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-800 border border-blue-500">
           <TabsTrigger value="pos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <ShoppingCart className="w-4 h-4 mr-2" />
             Point of Sale
@@ -925,6 +938,10 @@ Thank you for your business!
                 {heldOrdersCount}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="cash" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <Vault className="w-4 h-4 mr-2" />
+            Cash Drawer
           </TabsTrigger>
         </TabsList>
 
@@ -1630,6 +1647,29 @@ Thank you for your business!
               loadHeldOrdersCount()
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="cash" className="space-y-4">
+          {currentEmployee && store ? (
+            <CashDrawerDashboard
+              employeeId={currentEmployee.id}
+              storeId={store.id}
+              onShiftChange={(shift) => {
+                // Handle shift changes if needed
+                console.log('Shift changed:', shift)
+              }}
+            />
+          ) : (
+            <Card className="bg-gray-900 border-blue-500">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <Vault className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                  <h3 className="text-lg font-semibold mb-2 text-gray-400">Loading Cash Drawer System</h3>
+                  <p className="text-gray-500">Please wait while we initialize the system...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { useInputProtection, useInputDebugging } from '@/hooks/use-input-protection'
 import {
   Dialog,
   DialogContent,
@@ -51,20 +52,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-  Home,
-  End,
-  F1,
-  F2,
-  F3,
-  F4,
-  F5,
-  F6,
-  F7,
-  F8,
-  F9,
-  F10,
-  F11,
-  F12
+  Home
 } from 'lucide-react'
 
 interface KeyboardShortcut {
@@ -104,6 +92,10 @@ export default function KeyboardShortcutsManager({
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [isEnabled, setIsEnabled] = useState(true)
   const [recentCommands, setRecentCommands] = useState<Array<{ command: string; timestamp: number }>>([])
+  
+  // Input protection and debugging
+  const { handleGlobalKeydown } = useInputProtection()
+  const { logInputEvent, enableDebugging, disableDebugging, isDebugging } = useInputDebugging()
 
   // Default keyboard shortcuts configuration
   const defaultShortcuts: KeyboardShortcut[] = [
@@ -345,15 +337,17 @@ export default function KeyboardShortcutsManager({
     loadShortcuts()
   }, [])
 
-  // Global keyboard event handler
+  // Global keyboard event handler with enhanced input protection
   useEffect(() => {
     if (!isEnabled) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs
-      const target = event.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
-        return
+      // Log input events for debugging
+      logInputEvent('keydown', event)
+      
+      // Use enhanced input protection
+      if (!handleGlobalKeydown(event)) {
+        return // Event should be handled by input normally
       }
 
       const matchingShortcut = findMatchingShortcut(event)
@@ -366,7 +360,7 @@ export default function KeyboardShortcutsManager({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isEnabled, shortcuts, context])
+  }, [isEnabled, shortcuts, context, handleGlobalKeydown, logInputEvent])
 
   const loadShortcuts = () => {
     // Load from localStorage or use defaults
@@ -469,7 +463,7 @@ export default function KeyboardShortcutsManager({
   }, {} as Record<string, KeyboardShortcut[]>)
 
   const formatKey = (shortcut: KeyboardShortcut) => {
-    const parts = []
+    const parts: string[] = []
     if (shortcut.modifiers.ctrl) parts.push('Ctrl')
     if (shortcut.modifiers.alt) parts.push('Alt')
     if (shortcut.modifiers.shift) parts.push('Shift')
@@ -565,6 +559,20 @@ export default function KeyboardShortcutsManager({
                   }}
                 />
                 <label className="text-sm text-gray-400">Enabled</label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={isDebugging()}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      enableDebugging()
+                    } else {
+                      disableDebugging()
+                    }
+                  }}
+                />
+                <label className="text-sm text-gray-400">Debug Input</label>
               </div>
               
               <Button

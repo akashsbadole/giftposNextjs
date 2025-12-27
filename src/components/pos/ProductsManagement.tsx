@@ -322,85 +322,250 @@ export default function ProductsManagement() {
     })
   }
 
-  // Import products from CSV
-  const handleImportCSV = async (file: File) => {
-    const text = await file.text()
-    const lines = text.split('\n').filter(line => line.trim())
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+  // Enhanced CSV parsing function
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = []
+    let current = ''
+    let inQuotes = false
+    let i = 0
     
-    const results = { success: 0, errors: 0, errorMessages: [] as string[] }
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
-      if (values.length < headers.length) continue
+    while (i < line.length) {
+      const char = line[i]
+      const nextChar = line[i + 1]
       
-      const productData: any = {}
-      headers.forEach((header, index) => {
-        const key = header.toLowerCase().replace(' ', '')
-        productData[key] = values[index] || ''
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote
+          current += '"'
+          i += 2
+          continue
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes
+          i++
+          continue
+        }
+      }
+      
+      if (char === ',' && !inQuotes) {
+        result.push(current.trim())
+        current = ''
+        i++
+        continue
+      }
+      
+      current += char
+      i++
+    }
+    
+    result.push(current.trim())
+    return result
+  }
+
+  // Auto-create category if it doesn't exist
+  const getOrCreateCategory = async (categoryName: string): Promise<string | null> => {
+    if (!categoryName.trim()) return null
+    
+    // First, try to find existing category
+    let category = categories.find(c => 
+      c.name.toLowerCase() === categoryName.toLowerCase()
+    )
+    
+    if (category) {
+      return category.id
+    }
+    
+    // If not found, create it
+    try {
+      const slug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      const response = await fetch('/api/pos/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: categoryName,
+          slug: slug,
+          color: '#3b82f6'
+        })
       })
       
-      try {
-        // Validate required fields
-        if (!productData.name || !productData.sku || !productData.price) {
+      if (response.ok) {
+        const newCategory = await response.json()
+        // Update local categories state
+        setCategories(prev => [...prev, newCategory])
+        return newCategory.id
+      } else {
+        console.error('Failed to create category:', await response.text())
+        return null
+      }
+    } catch (error) {
+      console.error('Error creating category:', error)
+      return null
+    }
+  }
+
+  // Import products from CSV with enhanced parsing
+  const handleImportCSV = async (file: File) => {
+    try {
+      const text = await file.text()
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      if (lines.length === 0) {
+        toast({
+          title: 'Import Error',
+          description: 'CSV file is empty',
+          variant: 'destructive'
+        })
+        return
+      }
+      
+      // Parse headers with enhanced CSV handling
+      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''))
+      
+      // Validate required headers
+      const requiredHeaders = ['name', 'sku', 'price']
+      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h))
+      
+      if (missingHeaders.length > 0) {
+        toast({
+          title: 'Import Error',
+          description: `Missing required columns: ${missingHeaders.join(', ')}`,
+          variant: 'destructive'
+        })
+        return
+      }
+      
+      const results = { 
+        success: 0, 
+        errors: 0, 
+        createdCategories: 0,
+        errorMessages: [] as string[] 
+      }
+      
+      // Process each line
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i])
+        
+        if (values.length === 1 && !values[0]) continue // Skip empty lines
+        if (values.length < headers.length) {
           results.errors++
-          results.errorMessages.push(`Row ${i}: Missing required fields (Name, SKU, Price)`)
+          results.errorMessages.push(`Row ${i + 1}: Insufficient columns (expected ${headers.length}, got ${values.length})`)
           continue
         }
         
-        // Find category by name
-        const category = categories.find(c => 
-          c.name.toLowerCase() === productData.category?.toLowerCase()
-        )
-        
-        if (!category) {
-          results.errors++
-          results.errorMessages.push(`Row ${i}: Category "${productData.category}" not found`)
-          continue
-        }
-        
-        const response = await fetch('/api/pos/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: productData.name,
-            sku: productData.sku,
-            barcode: productData.barcode || null,
-            price: parseFloat(productData.price),
-            cost: parseFloat(productData.cost) || 0,
-            stock: parseInt(productData.stock) || 0,
-            minStock: parseInt(productData.minstock) || 0,
-            categoryId: category.id,
-            description: productData.description || null,
-            isActive: productData.status?.toLowerCase() !== 'inactive'
-          })
+        const productData: any = {}
+        headers.forEach((header, index) => {
+          productData[header] = values[index] || ''
         })
         
-        if (response.ok) {
-          results.success++
-        } else {
-          const error = await response.text()
+        try {
+          // Validate required fields
+          if (!productData.name?.trim() || !productData.sku?.trim() || !productData.price) {
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: Missing required fields (Name, SKU, Price)`)
+            continue
+          }
+          
+          // Get or create category
+          const categoryId = await getOrCreateCategory(productData.category || 'Uncategorized')
+          if (!categoryId) {
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: Failed to get or create category "${productData.category || 'Uncategorized'}"`)
+            continue
+          }
+          
+          // Validate numeric fields
+          const price = parseFloat(productData.price)
+          const cost = parseFloat(productData.cost) || 0
+          const stock = parseInt(productData.stock) || 0
+          const minStock = parseInt(productData.minstock) || 0
+          
+          if (isNaN(price) || price < 0) {
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: Invalid price value "${productData.price}"`)
+            continue
+          }
+          
+          if (isNaN(cost) || cost < 0) {
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: Invalid cost value "${productData.cost}"`)
+            continue
+          }
+          
+          if (isNaN(stock) || stock < 0) {
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: Invalid stock value "${productData.stock}"`)
+            continue
+          }
+          
+          if (isNaN(minStock) || minStock < 0) {
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: Invalid min stock value "${productData.minstock}"`)
+            continue
+          }
+          
+          const response = await fetch('/api/pos/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: productData.name.trim(),
+              sku: productData.sku.trim(),
+              barcode: productData.barcode?.trim() || null,
+              price: price,
+              cost: cost,
+              stock: stock,
+              minStock: minStock,
+              categoryId: categoryId,
+              description: productData.description?.trim() || null,
+              isActive: productData.status?.toLowerCase() !== 'inactive'
+            })
+          })
+          
+          if (response.ok) {
+            results.success++
+          } else {
+            const error = await response.text()
+            results.errors++
+            results.errorMessages.push(`Row ${i + 1}: ${error}`)
+          }
+        } catch (error) {
           results.errors++
-          results.errorMessages.push(`Row ${i}: ${error}`)
+          results.errorMessages.push(`Row ${i + 1}: ${error}`)
         }
-      } catch (error) {
-        results.errors++
-        results.errorMessages.push(`Row ${i}: ${error}`)
       }
+      
+      // Show detailed results
+      const description = `${results.success} products imported successfully`
+      const errorDetails = results.errors > 0 ? `, ${results.errors} errors` : ''
+      const categoryDetails = results.createdCategories > 0 ? `, ${results.createdCategories} categories created` : ''
+      
+      toast({
+        title: 'Import completed',
+        description: description + errorDetails + categoryDetails,
+        variant: results.errors > 0 ? 'destructive' : 'default'
+      })
+      
+      // Log detailed errors for debugging
+      if (results.errorMessages.length > 0) {
+        console.group('Import Errors')
+        results.errorMessages.forEach((error, index) => {
+          console.error(`Error ${index + 1}:`, error)
+        })
+        console.groupEnd()
+      }
+      
+      setImportDialogOpen(false)
+      
+      // Reload data to show imported products
+      await loadData()
+      
+    } catch (error) {
+      console.error('Import process failed:', error)
+      toast({
+        title: 'Import Failed',
+        description: 'Failed to process CSV file. Please check the file format.',
+        variant: 'destructive'
+      })
     }
-    
-    toast({
-      title: 'Import completed',
-      description: `${results.success} products imported, ${results.errors} errors`,
-      variant: results.errors > 0 ? 'destructive' : 'default'
-    })
-    
-    if (results.errorMessages.length > 0) {
-      console.log('Import errors:', results.errorMessages)
-    }
-    
-    setImportDialogOpen(false)
-    loadData()
   }
 
   const lowStockProducts = products.filter((p) => 

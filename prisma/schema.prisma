@@ -31,6 +31,8 @@ model Store {
   heldOrders         HeldOrder[]
   orderAnalytics      OrderAnalytics[]
   workflowRules       WorkflowRule[]
+  shifts              Shift[]
+  zReports            ZReport[]
 }
 
 // Category for organizing products
@@ -98,6 +100,7 @@ model Employee {
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   sales     Sale[]
   heldOrders HeldOrder[]
+  shifts    Shift[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -733,4 +736,697 @@ model JobQueue {
   @@index([startedAt])
   @@index([storeId])
   @@index([parentJobId])
+}
+
+// Shift Management for Cash Drawer Operations
+model Shift {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  storeId         String
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Shift timing
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  
+  // Cash tracking
+  startingCash    Float    @default(0)
+  expectedCash    Float    @default(0)
+  actualCash      Float?
+  cashVariance    Float?   // Difference between actual and expected
+  
+  // Status and metadata
+  status          String   @default("active") // active, closed, suspended, break
+  notes           String?
+  isBreak         Boolean  @default(false)
+  breakStart      DateTime?
+  breakEnd        DateTime?
+  
+  // Handover information
+  handoverTo      String?  // Next employee ID
+  handoverNotes   String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  cashTransactions CashTransaction[]
+  cashCounts      CashCount[]
+  zReports        ZReport[]
+  
+  @@index([employeeId])
+  @@index([storeId])
+  @@index([status])
+  @@index([startTime])
+  @@index([endTime])
+}
+
+// Cash Transaction tracking
+model CashTransaction {
+  id              String   @id @default(cuid())
+  shiftId         String
+  shift           Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  
+  // Transaction details
+  type            String   // sale, cash_in, cash_out, count, adjustment, refund
+  amount          Float
+  referenceId     String?  // Sale ID, Payment ID, etc.
+  referenceType   String?  // sale, payment, manual
+  
+  // Cash denomination breakdown for cash transactions
+  denominationBreakdown String? // JSON: { "2000": 2, "500": 5, "100": 10, "50": 20, "20": 15, "10": 30, "5": 25, "2": 20, "1": 50 }
+  
+  // Additional details
+  reason          String?  // Reason for cash in/out
+  notes           String?
+  
+  // Audit
+  createdBy       String?  // Clerk user ID
+  createdAt       DateTime @default(now())
+  
+  @@index([shiftId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([referenceId])
+}
+
+// Physical cash counts
+model CashCount {
+  id              String   @id @default(cuid())
+  shiftId         String
+  shift           Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  
+  // Count details
+  countType       String   // opening, closing, mid_shift, variance_investigation
+  expectedAmount  Float
+  actualAmount    Float
+  variance        Float    // actual - expected
+  
+  // Denomination breakdown
+  denominationBreakdown String // JSON object with cash counts
+  
+  // Status
+  status          String   @default("pending") // pending, approved, rejected
+  approvedBy      String?  // Manager/Supervisor ID
+  approvedAt      DateTime?
+  rejectionReason String?
+  
+  notes           String?
+  createdAt       DateTime @default(now())
+  
+  @@index([shiftId])
+  @@index([countType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Z-Reports (End-of-day reports)
+model ZReport {
+  id              String   @id @default(cuid())
+  shiftId         String
+  shift           Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  storeId         String
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Report period
+  reportDate      DateTime
+  reportPeriod    String   // daily, weekly, custom
+  
+  // Sales summary
+  totalSales      Float    @default(0)
+  totalTransactions Int    @default(0)
+  cashSales       Float    @default(0)
+  cardSales       Float    @default(0)
+  digitalSales    Float    @default(0)
+  
+  // Cash summary
+  openingCash     Float    @default(0)
+  closingCash     Float    @default(0)
+  cashVariance    Float    @default(0)
+  cashAdjustments Float    @default(0)
+  
+  // Tax summary
+  totalTax        Float    @default(0)
+  taxBreakdown    String?  // JSON tax breakdown
+  
+  // Additional metrics
+  refundAmount    Float    @default(0)
+  discountAmount  Float    @default(0)
+  
+  // Report data
+  reportData      String?  // JSON with detailed breakdown
+  
+  // Status
+  status          String   @default("generated") // generated, printed, submitted
+  printedAt       DateTime?
+  submittedAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([shiftId])
+  @@index([storeId])
+  @@index([reportDate])
+  @@index([status])
+}
+
+// Enhanced Multi-Tax Support Models
+
+// Tax Types (GST, CGST, SGST, IGST, CESS, etc.)
+model TaxType {
+  id          String   @id @default(cuid())
+  code        String   @unique // GST, CGST, SGST, IGST, CESS, etc.
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  taxRates    TaxRate[]
+  saleTaxBreakdowns SaleTaxBreakdown[]
+  saleItemTaxBreakdowns SaleItemTaxBreakdown[]
+  inputTaxCredits InputTaxCredit[]
+  
+  @@index([code])
+  @@index([isActive])
+}
+
+// Regional Tax Configuration (States, Union Territories, Countries)
+model TaxRegion {
+  id           String   @id @default(cuid())
+  code         String   @unique // State codes (MH, DL, KA, etc.) or country codes
+  name         String
+  type         String   // state, union_territory, country, international
+  gstStateCode String?  // For Indian states
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  taxRates     TaxRate[]
+  
+  @@index([code])
+  @@index([type])
+  @@index([isActive])
+}
+
+// Tax Rates Master with Effective Date Range
+model TaxRate {
+  id           String   @id @default(cuid())
+  taxTypeId    String
+  taxType      TaxType  @relation(fields: [taxTypeId], references: [id], onDelete: Cascade)
+  regionId     String
+  region       TaxRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  rate         Float    // Tax rate percentage
+  effectiveFrom DateTime
+  effectiveTo  DateTime?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  productMappings ProductTaxMapping[]
+  categoryMappings CategoryTaxMapping[]
+  taxRules     TaxRule[]
+  saleTaxBreakdowns SaleTaxBreakdown[]
+  saleItemTaxBreakdowns SaleItemTaxBreakdown[]
+  
+  @@unique([taxTypeId, regionId, effectiveFrom])
+  @@index([isActive, effectiveFrom, effectiveTo])
+  @@index([taxTypeId])
+  @@index([regionId])
+}
+
+// HSN Code Master for Product Classification
+model HSNCodeMaster {
+  id             String   @id @default(cuid())
+  hsnCode        String   @unique
+  description    String?
+  taxCategory    String?  // Essential, Luxury, etc.
+  defaultTaxRateId String?
+  defaultTaxRate TaxRate? @relation(fields: [defaultTaxRateId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  productMappings ProductTaxMapping[]
+  categoryMappings CategoryTaxMapping[]
+  
+  @@index([hsnCode])
+  @@index([taxCategory])
+  @@index([isActive])
+}
+
+// Product Tax Mapping
+model ProductTaxMapping {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  hsnCodeId      String?
+  hsnCode        HSNCodeMaster? @relation(fields: [hsnCodeId], references: [id])
+  taxRateId      String
+  taxRate        TaxRate  @relation(fields: [taxRateId], references: [id], onDelete: Cascade)
+  isTaxInclusive Boolean  @default(false) // Whether product price includes tax
+  taxExempt      Boolean  @default(false)
+  effectiveFrom  DateTime @default(now())
+  effectiveTo    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([productId])
+  @@index([taxExempt, effectiveFrom, effectiveTo])
+  @@index([hsnCodeId])
+}
+
+// Category Tax Mapping
+model CategoryTaxMapping {
+  id             String   @id @default(cuid())
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  hsnCodeId      String?
+  hsnCode        HSNCodeMaster? @relation(fields: [hsnCodeId], references: [id])
+  taxRateId      String
+  taxRate        TaxRate  @relation(fields: [taxRateId], references: [id], onDelete: Cascade)
+  isTaxInclusive Boolean  @default(false)
+  taxExempt      Boolean  @default(false)
+  effectiveFrom  DateTime @default(now())
+  effectiveTo    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([categoryId])
+  @@index([taxExempt, effectiveFrom, effectiveTo])
+  @@index([hsnCodeId])
+}
+
+// Tax Rules for Complex Scenarios
+model TaxRule {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  ruleType           String   // exemption, holiday, special_scheme, customer_based
+  conditions         String   // JSON conditions
+  taxRateId          String?
+  taxRate            TaxRate? @relation(fields: [taxRateId], references: [id])
+  discountPercentage Float?   // For tax exemptions/breaks
+  effectiveFrom      DateTime
+  effectiveTo        DateTime?
+  isActive           Boolean  @default(true)
+  priority           Int      @default(0) // For rule precedence
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  customerExemptions CustomerTaxExemption[]
+  
+  @@index([ruleType])
+  @@index([isActive, effectiveFrom, effectiveTo])
+  @@index([priority])
+  @@index([taxRateId])
+}
+
+// Customer Tax Exemptions
+model CustomerTaxExemption {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  taxRuleId     String
+  taxRule       TaxRule  @relation(fields: [taxRuleId], references: [id], onDelete: Cascade)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([customerId])
+  @@index([taxRuleId])
+  @@index([isActive])
+}
+
+// Enhanced Sale with Multi-Tax Support
+model SaleTaxBreakdown {
+  id             String   @id @default(cuid())
+  saleId         String
+  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  taxTypeId      String
+  taxType        TaxType  @relation(fields: [taxTypeId], references: [id])
+  taxRateId      String
+  taxRate        TaxRate  @relation(fields: [taxRateId], references: [id])
+  baseAmount     Float    // Amount before tax
+  taxPercentage  Float    // Tax rate percentage
+  taxAmount      Float    // Calculated tax amount
+  isCompound     Boolean  @default(false) // For compound taxes
+  parentTaxId    String?  // For compound tax relationships
+  createdAt      DateTime @default(now())
+  
+  @@index([saleId])
+  @@index([taxTypeId])
+  @@index([taxRateId])
+}
+
+// Enhanced Sale Item with Tax Breakdown
+model SaleItemTaxBreakdown {
+  id             String   @id @default(cuid())
+  saleItemId     String
+  saleItem       SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+  taxTypeId      String
+  taxType        TaxType  @relation(fields: [taxTypeId], references: [id])
+  taxRateId      String
+  taxRate        TaxRate  @relation(fields: [taxRateId], references: [id])
+  baseAmount     Float    // Amount before tax
+  taxPercentage  Float
+  taxAmount      Float
+  hsnCode        String?  // HSN code for this line item
+  isCompound     Boolean  @default(false)
+  parentTaxId    String?
+  createdAt      DateTime @default(now())
+  
+  @@index([saleItemId])
+  @@index([taxTypeId])
+  @@index([taxRateId])
+  @@index([hsnCode])
+}
+
+// Tax Invoice Configuration
+model TaxInvoiceSettings {
+  id                    String   @id @default(cuid())
+  storeId               String
+  store                 Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  formatType            String   @default("standard") // standard, simplified, export
+  includeHSNCodes       Boolean  @default(true)
+  includeTaxBreakdown   Boolean  @default(true)
+  includeSellerDetails  Boolean  @default(true)
+  includeBuyerDetails   Boolean  @default(true)
+  digitalSignatureRequired Boolean @default(false)
+  templateConfig        String?  // JSON template configuration
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@unique([storeId])
+}
+
+// Tax Compliance Reports
+model TaxComplianceReport {
+  id                String   @id @default(cuid())
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  reportType        String   // GSTR1, GSTR3B, monthly_summary, annual_summary
+  reportPeriod      String   // 2024-12, 2024-Q4, etc.
+  data              String   // JSON report data
+  status            String   @default("draft") // draft, generated, submitted, accepted, rejected
+  generatedAt       DateTime @default(now())
+  submittedAt       DateTime?
+  acceptanceStatus  String?  // accepted, rejected, pending
+  remarks           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([storeId])
+  @@index([reportType])
+  @@index([reportPeriod])
+  @@index([status])
+}
+
+// Tax Audit Trail
+model TaxAuditTrail {
+  id               String   @id @default(cuid())
+  saleId           String?
+  sale             Sale?    @relation(fields: [saleId], references: [id])
+  saleItemId       String?
+  saleItem         SaleItem? @relation(fields: [saleItemId], references: [id])
+  action           String   // calculated, adjusted, exempted, manual_override
+  previousTaxData  String?  // JSON previous tax data
+  newTaxData       String   // JSON new tax data
+  reason           String?  // Reason for change
+  userId           String?  // Clerk user ID
+  timestamp        DateTime @default(now())
+  
+  @@index([saleId])
+  @@index([saleItemId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([userId])
+}
+
+// Input Tax Credit Tracking
+model InputTaxCredit {
+  id           String   @id @default(cuid())
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  taxTypeId    String
+  taxType      TaxType  @relation(fields: [taxTypeId], references: [id])
+  amount       Float
+  creditDate   DateTime
+  referenceType String? // purchase, adjustment, carry_forward
+  referenceId  String?  // Reference to purchase or adjustment
+  isUtilized   Boolean  @default(false)
+  utilizedAmount Float  @default(0)
+  utilizationDate DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([storeId])
+  @@index([taxTypeId])
+  @@index([isUtilized])
+  @@index([creditDate])
+}
+
+// Tax Holiday Configuration
+model TaxHolidayConfig {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  startDate          DateTime
+  endDate            DateTime
+  applicableRegions  String?  // JSON array of region IDs
+  taxExemptions      String?  // JSON array of tax type IDs
+  productCategories  String?  // JSON array of category IDs
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  @@index([startDate, endDate])
+  @@index([isActive])
+}
+
+// Comprehensive Batch Operations System
+
+// Batch Operation Templates for reusable operations
+model BatchOperationTemplate {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  operationType    String   // import_products, export_customers, bulk_inventory_update, etc.
+  targetEntity     String   // products, customers, inventory, orders, categories
+  validationRules  String?  // JSON validation rules
+  defaultParameters String? // JSON default parameters
+  isActive         Boolean  @default(true)
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  batchOperations  BatchOperation[]
+  schedules        BatchOperationSchedule[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([storeId])
+  @@index([operationType])
+  @@index([targetEntity])
+}
+
+// Batch Operations for tracking bulk operations
+model BatchOperation {
+  id               String   @id @default(cuid())
+  operationId      String   @unique // Human-readable operation ID
+  name             String
+  description      String?
+  type             String   // import, export, bulk_update, mass_processing, scheduled
+  entityType       String   // products, customers, inventory, orders, categories, sales
+  status           String   @default("pending") // pending, queued, running, paused, completed, failed, cancelled
+  priority         Int      @default(0)
+  totalRecords     Int      @default(0)
+  processedRecords Int      @default(0)
+  successRecords   Int      @default(0)
+  failedRecords    Int      @default(0)
+  skippedRecords   Int      @default(0)
+  progressPercentage Float  @default(0)
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId           String?  // Clerk user ID who initiated the operation
+  templateId       String?
+  template         BatchOperationTemplate? @relation(fields: [templateId], references: [id])
+  jobQueueId       String?
+  jobQueue         JobQueue? @relation(fields: [jobQueueId], references: [id])
+  parameters       String?  // JSON operation parameters
+  validationResults String? // JSON validation results
+  errorLog         String?  // JSON error details
+  resultData       String?  // JSON operation results
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  pausedAt         DateTime?
+  estimatedDuration Int?    // Estimated duration in seconds
+  actualDuration   Int?     // Actual duration in seconds
+  canResume        Boolean  @default(true)
+  retryCount       Int      @default(0)
+  maxRetries       Int      @default(3)
+  parentOperationId String?
+  parentOperation  BatchOperation? @relation("BatchOperationHierarchy", fields: [parentOperationId], references: [id])
+  childOperations  BatchOperation[] @relation("BatchOperationHierarchy")
+  metadata         String?  // JSON additional metadata
+  records          BatchOperationRecord[]
+  progress         BatchOperationProgress[]
+  files            BatchOperationFile[]
+  history          BatchOperationHistory[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([storeId])
+  @@index([status])
+  @@index([type])
+  @@index([entityType])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([parentOperationId])
+}
+
+// Individual records within a batch operation
+model BatchOperationRecord {
+  id                  String   @id @default(cuid())
+  batchOperationId    String
+  batchOperation      BatchOperation @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
+  recordId            String?  // ID of the actual record being processed
+  recordIndex         Int      // Position in the batch
+  data                String?  // JSON record data
+  status              String   @default("pending") // pending, processing, completed, failed, skipped
+  validationStatus    String   @default("pending") // pending, valid, invalid, warning
+  validationErrors    String?  // JSON validation errors
+  processingResult    String?  // JSON processing result
+  errorMessage        String?
+  retryCount          Int      @default(0)
+  processedAt         DateTime?
+  errorAt             DateTime?
+  skippedAt           DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@index([batchOperationId])
+  @@index([status])
+  @@index([validationStatus])
+  @@index([recordIndex])
+}
+
+// Progress tracking for batch operations
+model BatchOperationProgress {
+  id                   String   @id @default(cuid())
+  batchOperationId     String
+  batchOperation       BatchOperation @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
+  phase                String   // validation, processing, completion, rollback
+  phaseStatus          String   @default("pending") // pending, running, completed, failed
+  currentStep          String?  // Current step being processed
+  totalSteps           Int?
+  completedSteps       Int      @default(0)
+  progressPercentage   Float    @default(0)
+  startTime            DateTime?
+  endTime              DateTime?
+  estimatedTimeRemaining Int?   // Seconds
+  currentRecordIndex   Int      @default(0)
+  lastProcessedRecordId String?
+  currentProcessingRate Float?  // Records per second
+  peakMemoryUsage      Float?   // MB
+  errorCount           Int      @default(0)
+  warningCount         Int      @default(0)
+  metadata             String?  // JSON additional progress metadata
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  @@index([batchOperationId])
+  @@index([phase])
+  @@index([phaseStatus])
+}
+
+// Files used in batch operations (import/export)
+model BatchOperationFile {
+  id               String   @id @default(cuid())
+  batchOperationId String
+  batchOperation   BatchOperation @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
+  fileName         String
+  originalFileName String?
+  fileType         String   // csv, xlsx, json, xml
+  fileSize         Int?     // File size in bytes
+  filePath         String?  // Storage path
+  fileHash         String?  // SHA256 hash for integrity
+  mimeType         String?
+  encoding         String?
+  delimiter        String?  // For CSV files
+  hasHeader        Boolean  @default(true)
+  sheetName        String?  // For Excel files
+  totalRows        Int?
+  processedRows    Int      @default(0)
+  validRows        Int      @default(0)
+  invalidRows      Int      @default(0)
+  skippedRows      Int      @default(0)
+  errorRows        Int      @default(0)
+  previewData      String?  // JSON preview of first few rows
+  columnMapping    String?  // JSON column mapping
+  fileStatus       String   @default("uploaded") // uploaded, processing, processed, failed
+  uploadedAt       DateTime @default(now())
+  processedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([batchOperationId])
+  @@index([fileStatus])
+  @@index([fileType])
+}
+
+// History and audit trail for batch operations
+model BatchOperationHistory {
+  id                  String   @id @default(cuid())
+  batchOperationId    String
+  batchOperation      BatchOperation @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
+  eventType           String   // created, started, paused, resumed, completed, failed, cancelled
+  eventDescription    String?
+  userId              String?
+  userName            String?
+  userEmail           String?
+  previousStatus      String?
+  newStatus           String?
+  phase               String?
+  step                String?
+  details             String?  // JSON additional details
+  errorMessage        String?
+  timestamp           DateTime @default(now())
+  
+  @@index([batchOperationId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+// Scheduled batch operations
+model BatchOperationSchedule {
+  id                       String   @id @default(cuid())
+  name                     String
+  description              String?
+  batchOperationTemplateId String
+  template                 BatchOperationTemplate @relation(fields: [batchOperationTemplateId], references: [id], onDelete: Cascade)
+  cronExpression           String?  // Cron expression for scheduling
+  intervalMinutes          Int?     // Alternative to cron for simple intervals
+  isActive                 Boolean  @default(true)
+  priority                 Int      @default(0)
+  maxConcurrentRuns        Int      @default(1)
+  parameters               String?  // JSON parameters to override template defaults
+  conditions               String?  // JSON conditions for execution
+  lastRunAt                DateTime?
+  nextRunAt                DateTime?
+  runCount                 Int      @default(0)
+  failureCount             Int      @default(0)
+  lastFailureAt            DateTime?
+  storeId                  String
+  store                    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  
+  @@index([storeId])
+  @@index([batchOperationTemplateId])
+  @@index([isActive])
+  @@index([nextRunAt])
 }
