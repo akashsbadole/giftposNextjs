@@ -820,7 +820,7 @@ export default function WorkflowManager({
                     <CardTitle className="text-gray-400">Recent Activity</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-[300px]">
+                    <ScrollArea className="h-75">
                       <div className="space-y-3">
                         {jobQueue.slice(0, 10).map((job) => (
                           <div key={job.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/50">
@@ -1094,7 +1094,7 @@ export default function WorkflowManager({
               </DialogDescription>
             </DialogHeader>
             
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-125">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
                 {templates.map((template) => (
                   <Card key={template.id} className="bg-gray-800 border-blue-500">

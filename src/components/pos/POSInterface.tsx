@@ -834,28 +834,7 @@ Thank you for your business!
     }
   }, [store?.id])
 
-  // Initialize database with sample data
-  const handleInitialize = async () => {
-    try {
-      const response = await fetch('/api/pos/initialize', {
-        method: 'POST',
-      })
 
-      if (response.ok) {
-        toast({
-          title: 'Database initialized',
-          description: 'Sample data has been added',
-        })
-        loadInitialData()
-      }
-    } catch (error) {
-      toast({
-        title: 'Initialization failed',
-        description: 'Please try again',
-        variant: 'destructive',
-      })
-    }
-  }
 
   // Payment icons
   const paymentIcons: { [key in typeof paymentMethod]: any } = {
@@ -875,21 +854,25 @@ Thank you for your business!
     )
   }
 
-  // Show initialize button if no products
-  if (products.length === 0 && categories.length === 0) {
+  // Show empty state if no products or categories
+  if (products.length === 0) {
     return (
       <div className="flex items-center justify-center h-150">
         <Card className="max-w-md w-full bg-gray-900 border-blue-500 shadow-xl">
           <CardContent className="p-8">
             <div className="text-center">
-              <Database className="w-16 h-16 mx-auto mb-4 text-gray-900" />
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">No Data Found</h3>
+              <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-xl font-semibold mb-2 text-gray-400">No Products Available</h3>
               <p className="text-gray-300 mb-6">
-                Initialize the database with sample products, categories, and customers to get started.
+                Add products to your inventory to start making sales.
               </p>
-              <Button onClick={handleInitialize} className="w-full bg-amber-600 hover:bg-blue-accent text-white" size="lg">
-                <Database className="w-5 h-5 mr-2" />
-                Initialize Database
+              <Button 
+                onClick={() => window.location.href = '/products'} 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                size="lg"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Products
               </Button>
             </div>
           </CardContent>

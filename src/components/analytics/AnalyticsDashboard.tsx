@@ -486,7 +486,7 @@ export default function AnalyticsDashboard({
                     <CardDescription>Best performing products</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-[300px]">
+                    <ScrollArea className="h-75">
                       <div className="space-y-3">
                         {topProducts.map((product, index) => (
                           <div key={product.name} className="flex items-center justify-between p-3 rounded-lg bg-gray-700/50">
@@ -593,7 +593,7 @@ export default function AnalyticsDashboard({
                   <CardDescription>Performance by user</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[600px]">
+                  <ScrollArea className="h-150">
                     <div className="space-y-4">
                       {userActivity.map((user) => (
                         <div key={user.userId} className="flex items-center justify-between p-4 rounded-lg bg-gray-700/50 border border-blue-500">
@@ -687,7 +687,7 @@ export default function AnalyticsDashboard({
                     <CardDescription>Recent system alerts and warnings</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-[300px]">
+                    <ScrollArea className="h-75">
                       <div className="space-y-3">
                         <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                           <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5" />

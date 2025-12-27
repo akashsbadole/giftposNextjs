@@ -29,6 +29,8 @@ model Store {
   printers           Printer[]
   paymentProviders   PaymentProvider[]
   heldOrders         HeldOrder[]
+  orderAnalytics      OrderAnalytics[]
+  workflowRules       WorkflowRule[]
 }
 
 // Category for organizing products
@@ -505,6 +507,8 @@ model HeldOrder {
   updatedAt     DateTime  @updatedAt
   retrievedAt   DateTime?
   expiredAt     DateTime?
+  collaborationSessions CollaborationSession[]
+  orderLocks     OrderLock[]
   
   @@index([storeId, status])
   @@index([customerId])
@@ -637,6 +641,7 @@ model WorkflowRule {
   
   storeId       String
   store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  workflowActions WorkflowAction[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

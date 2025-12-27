@@ -248,7 +248,7 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
   if (isSubmitted && ticketId) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-125">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
